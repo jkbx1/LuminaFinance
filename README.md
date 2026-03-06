@@ -4,7 +4,7 @@ Lumina Finance is a modern, responsive, and visually stunning personal finance a
 
 ## ✨ Features
 
-- **Beautiful Glassmorphic UI:** A state-of-of-the-art design featuring translucent panels, a dynamic 3D background, and vibrant gradients.
+- **Beautiful Glassmorphic UI:** A state-of-the-art design featuring translucent panels, a dynamic 3D background, and vibrant gradients.
 - **Seamless Authentication:** Securely log in using Google Authentication via Firebase, or start tracking immediately using the **Guest Mode** (powered by LocalStorage).
 - **Interactive Dashboard:** View your financial overview with a dynamic Donut Chart, recent transactions, and quick summaries of your total balance, income, and expenses.
 - **Monthly View Calendar:** Easily navigate through your expenses day-by-day or view your entire month at a glance using an intuitive calendar interface.
