@@ -6,11 +6,11 @@
 
 @layer utilities {
   .glass-panel {
-    @apply bg-white/10 backdrop-blur-xl border border-white/20 shadow-xl;
+    @apply bg-white/10 backdrop-blur-sm md:backdrop-blur-xl border border-white/20 shadow-xl;
   }
 
   .glass-button {
-    @apply rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 transition-all duration-300 shadow-lg hover:shadow-white/10;
+    @apply rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-sm md:backdrop-blur-md border border-white/20 transition-all duration-300 shadow-lg hover:shadow-white/10;
   }
 }
 
