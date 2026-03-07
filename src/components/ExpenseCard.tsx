@@ -134,10 +134,22 @@ const ExpenseCardComponent: React.FC<ExpenseCardProps> = ({
   // Check if device supports hover (desktop) vs touch (mobile)
   const [isHoverable, setIsHoverable] = useState(true);
 
+  // Detect mobile Chrome to soften heavy layout animations that cause jank there
+  const [isMobileChrome, setIsMobileChrome] = useState(false);
+
   React.useEffect(() => {
-    setIsHoverable(
-      window.matchMedia("(hover: hover) and (pointer: fine)").matches,
-    );
+    if (typeof window !== "undefined") {
+      setIsHoverable(
+        window.matchMedia("(hover: hover) and (pointer: fine)").matches,
+      );
+
+      const ua = window.navigator.userAgent || "";
+      const isAndroid = /Android/i.test(ua);
+      const isChrome =
+        /Chrome/i.test(ua) && !/Edg/i.test(ua) && !/OPR/i.test(ua);
+
+      setIsMobileChrome(isAndroid && isChrome);
+    }
   }, []);
 
   const handleMouseLeave = () => {
@@ -257,7 +269,7 @@ const ExpenseCardComponent: React.FC<ExpenseCardProps> = ({
   return (
     // Outer: layout wrapper only
     <motion.div
-      layout
+      layout={!isMobileChrome}
       id={`expense-card-${transaction.id}`}
       className={`relative transform-gpu will-change-transform ${isHovered || isExpanded ? "z-30" : "z-10"} ${isEditing ? "pointer-events-none" : ""}`}
     >
@@ -271,18 +283,18 @@ const ExpenseCardComponent: React.FC<ExpenseCardProps> = ({
         className="cursor-pointer"
       >
         <motion.div
-          layout
+          layout={!isMobileChrome}
           className="relative w-full h-full group transition-transform hover:scale-[1.01]"
         >
           {/* Hover Background Container wraps the entire inner card visually */}
           <motion.div
-            layout
+            layout={!isMobileChrome}
             style={{ borderRadius: 16, overflow: "hidden" }}
             className={`glass-panel border group-hover:bg-white/15 transition-all duration-300 relative transform-gpu will-change-transform ${isExpanded ? "bg-white/10 border-white/20 shadow-xl shadow-black/20" : "border-white/5 group-hover:border-white/20"}`}
           >
             {/* Inner Content that fades out/in when editing */}
             <motion.div
-              layout
+              layout={!isMobileChrome}
               initial={false}
               animate={{ opacity: isEditing ? 0 : 1 }}
               transition={{ delay: 0.1, duration: 0.2 }}
