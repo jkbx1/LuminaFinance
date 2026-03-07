@@ -16,7 +16,7 @@ export const Background3D: React.FC = () => {
           repeat: Infinity,
           ease: "easeInOut",
         }}
-        className="absolute top-[10%] left-[10%] w-64 h-32 rounded-full mix-blend-screen filter blur-[80px] opacity-60"
+        className="absolute top-[10%] left-[10%] w-64 h-32 rounded-full mix-blend-screen filter blur-[40px] md:blur-[80px] opacity-60"
         style={{
           background: "linear-gradient(90deg, #14b8a6, #3b82f6)",
         }}
@@ -35,7 +35,7 @@ export const Background3D: React.FC = () => {
           ease: "easeInOut",
           delay: 2,
         }}
-        className="absolute bottom-[20%] right-[10%] w-80 h-40 rounded-full mix-blend-screen filter blur-[100px] opacity-50"
+        className="absolute bottom-[20%] right-[10%] w-80 h-40 rounded-full mix-blend-screen filter blur-[50px] md:blur-[100px] opacity-50"
         style={{
           background: "linear-gradient(90deg, #8b5cf6, #ec4899)",
         }}
@@ -53,7 +53,7 @@ export const Background3D: React.FC = () => {
           ease: "easeInOut",
           delay: 1,
         }}
-        className="absolute top-[50%] left-[20%] w-32 h-32 rounded-full mix-blend-screen filter blur-[60px] opacity-40"
+        className="absolute top-[50%] left-[20%] w-32 h-32 rounded-full mix-blend-screen filter blur-[30px] md:blur-[60px] opacity-40"
         style={{
           background: "radial-gradient(circle, #06b6d4, transparent)",
         }}
@@ -71,7 +71,7 @@ export const Background3D: React.FC = () => {
           ease: "easeInOut",
           delay: 3,
         }}
-        className="absolute top-[30%] right-[25%] w-48 h-24 rounded-full mix-blend-screen filter blur-[70px] opacity-40"
+        className="absolute top-[30%] right-[25%] w-48 h-24 rounded-full mix-blend-screen filter blur-[35px] md:blur-[70px] opacity-40"
         style={{
           background: "linear-gradient(45deg, #10b981, #6366f1)",
         }}
