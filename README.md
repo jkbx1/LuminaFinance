@@ -34,8 +34,8 @@ Lumina Finance is a modern, responsive, and visually stunning personal finance a
 1. **Clone the repository:**
 
    ```bash
-   git clone https://github.com/jkbx1/lumina-finance.git
-   cd lumina-finance
+   git clone https://github.com/jkbx1/luminafinance.git
+   cd luminafinance
    ```
 
 2. **Install dependencies:**
