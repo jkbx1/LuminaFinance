@@ -1,22 +1,39 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { LogIn, User } from "lucide-react";
+import { LogIn, User, X } from "lucide-react";
 import { GlassCard } from "./ui/GlassCard";
 import { GlassButton } from "./ui/GlassButton";
 import { useAuth } from "../context/AuthContext";
 
-export const AuthModal: React.FC = () => {
+interface AuthModalProps {
+  onClose?: () => void;
+}
+
+export const AuthModal: React.FC<AuthModalProps> = ({ onClose }) => {
   const { signInWithGoogle, continueAsGuest } = useAuth();
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center p-4 z-50 bg-slate-950/40 backdrop-blur-sm">
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 flex items-center justify-center p-4 z-50 bg-slate-950/40 backdrop-blur-sm"
+    >
+      <div className="absolute inset-0" onClick={onClose} />
       <motion.div
-        initial={{ opacity: 0, scale: 0.9, y: 20 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        transition={{ type: "spring", duration: 0.6, bounce: 0.3 }}
+        layoutId="auth-modal"
+        transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
         className="w-full max-w-md"
       >
         <GlassCard className="text-center p-10 flex flex-col items-center border border-white/20 shadow-2xl relative overflow-hidden">
+          {onClose && (
+            <button
+              onClick={onClose}
+              className="absolute top-4 right-4 p-2 text-slate-400 hover:text-white transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          )}
           {/* Subtle background glow inside the card */}
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-64 bg-teal-500/20 rounded-full blur-[60px] pointer-events-none" />
 
@@ -79,6 +96,6 @@ export const AuthModal: React.FC = () => {
           </GlassButton>
         </GlassCard>
       </motion.div>
-    </div>
+    </motion.div>
   );
 };

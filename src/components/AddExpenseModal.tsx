@@ -209,7 +209,8 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
             style={{
               maxHeight: "95dvh",
               overflow: "hidden",
-              viewTransitionName: isMobileChrome ? undefined : "modal-morph",
+              viewTransitionName:
+                !isMobileChrome && isOpen ? "modal-morph" : undefined,
             }}
           >
             <div className="relative z-10 w-full flex-1 min-h-0 flex flex-col items-stretch h-full max-h-[95dvh]">

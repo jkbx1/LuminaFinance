@@ -281,7 +281,8 @@ export const Dashboard: React.FC = () => {
     const isMobile = window.innerWidth < 640;
     const targetId = isMobile ? "fab-add-button-mobile" : "fab-add-button";
     const target = document.getElementById(targetId);
-    if (target && !isMobileChrome) target.style.viewTransitionName = "modal-morph";
+    if (target && !isMobileChrome)
+      target.style.viewTransitionName = "modal-morph";
 
     if (!document.startViewTransition || isMobileChrome) {
       if (target) target.style.viewTransitionName = "";
@@ -480,7 +481,12 @@ export const Dashboard: React.FC = () => {
 
   return (
     <LayoutGroup>
-      <div className="min-h-screen pt-8 pb-20 px-4 md:px-8 relative z-0 selection:bg-teal-500/30">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+        className="min-h-screen pt-8 pb-20 px-4 md:px-8 relative z-0 selection:bg-teal-500/30"
+      >
         <Background3D />
 
         <div className="max-w-7xl mx-auto">
@@ -1015,7 +1021,7 @@ export const Dashboard: React.FC = () => {
           onEdit={handleEditTransaction}
           defaultDate={selectedCalendarDate || new Date()}
         />
-      </div>
+      </motion.div>
     </LayoutGroup>
   );
 };
