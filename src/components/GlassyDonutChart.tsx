@@ -30,10 +30,14 @@ const CustomTooltip = ({
     const isLeft = x < cx;
     const isTop = y < cy;
 
-    const translateX = isLeft ? "-100%" : "0%";
+    // On mobile screens, point the tooltip horizontally inward to prevent clipping off the edge of the screen
+    const isMobile = typeof window !== "undefined" && window.innerWidth < 640;
+    const pointLeft = isMobile ? !isLeft : isLeft;
+
+    const translateX = pointLeft ? "-100%" : "0%";
     const translateY = isTop ? "-100%" : "0%";
 
-    const offsetX = isLeft ? -20 : 20;
+    const offsetX = pointLeft ? -20 : 20;
     const offsetY = isTop ? -20 : 20;
 
     return (
@@ -77,7 +81,7 @@ export const GlassyDonutChart: React.FC<GlassyDonutChartProps> = ({
     : data.reduce((sum, item) => sum + item.value, 0);
 
   return (
-    <div className="relative w-full h-[280px]">
+    <div className="relative w-full h-[250px] sm:h-[280px] md:h-[300px]">
       <ResponsiveContainer width="100%" height="100%">
         <PieChart>
           <Tooltip

@@ -7,6 +7,7 @@
 @layer utilities {
   .glass-panel {
     @apply bg-white/10 backdrop-blur-sm md:backdrop-blur-xl border border-white/20 shadow-xl;
+    will-change: transform;
   }
 
   .glass-button {

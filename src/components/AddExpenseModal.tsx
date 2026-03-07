@@ -170,55 +170,55 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
   return (
     <>
       {/* Backdrop */}
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            key="backdrop"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.25 }}
-            className="fixed inset-0 z-40 bg-slate-950/60 backdrop-blur-md"
-            onClick={onClose}
-          />
-        )}
-      </AnimatePresence>
+      {isOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-slate-950/60 backdrop-blur-md transition-opacity animate-in fade-in duration-300"
+          onClick={onClose}
+        />
+      )}
 
-      {/* Standard CSS Opacity/Scale Modal */}
-      <AnimatePresence>
-        {isOpen && (
+      {/* Standard CSS View Transition Modal */}
+      {isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 pointer-events-none pb-safe">
           <div
-            key="modal-card-wrapper"
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 pointer-events-none"
+            className="relative w-full max-w-md flex flex-col pointer-events-auto glass-panel shadow-2xl border border-white/20 animate-in fade-in zoom-in-95 duration-300 rounded-3xl"
+            style={{
+              maxHeight: "95dvh",
+              overflow: "hidden",
+              viewTransitionName: "modal-morph",
+            }}
           >
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 10 }}
-              transition={{ type: "spring", stiffness: 400, damping: 30 }}
-              className="relative w-full max-w-md h-auto max-h-[100dvh] flex flex-col pointer-events-auto glass-panel shadow-2xl border border-white/20"
-              style={{ borderRadius: 16, overflow: "hidden" }}
-            >
-              <div className="relative z-10 w-full h-auto max-h-[90vh] overflow-y-auto overflow-x-hidden p-5 sm:p-8 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent flex flex-col items-stretch rounded-2xl">
-                <div className="absolute top-0 right-0 w-64 h-64 bg-purple-500/20 rounded-full blur-[60px] pointer-events-none -translate-y-1/2 translate-x-1/2" />
+            <div className="relative z-10 w-full flex-1 min-h-0 flex flex-col items-stretch h-full max-h-[95dvh]">
+              <div className="absolute top-0 right-0 w-64 h-64 bg-purple-500/20 rounded-full blur-[60px] pointer-events-none -translate-y-1/2 translate-x-1/2" />
 
-                {/* Close */}
+              {/* Header (Fixed) */}
+              <div className="flex items-center justify-between p-5 sm:p-8 pb-1 sm:pb-2 shrink-0 relative z-10">
+                <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
+                  {editingTransaction ? "Edit Transaction" : "Add Transaction"}
+                </h2>
                 <button
                   type="button"
                   onClick={onClose}
-                  className="absolute top-4 right-4 p-2 rounded-full hover:bg-white/10 text-slate-400 hover:text-white transition-colors z-20 self-end"
+                  className="p-2 -mr-2 rounded-full hover:bg-white/10 text-slate-400 hover:text-white transition-colors"
                 >
                   <X className="w-5 h-5" />
                 </button>
+              </div>
 
-                {/* Title */}
-                <h2 className="text-xl sm:text-2xl font-bold text-white mb-6 relative z-10 tracking-tight text-center sm:text-left self-start">
-                  {editingTransaction ? "Edit Transaction" : "Add Transaction"}
-                </h2>
-
-                <form
-                  onSubmit={handleSubmit}
-                  className="space-y-4 sm:space-y-5 relative z-10 w-full max-w-[320px] mx-auto sm:max-w-none"
+              {/* Body and Footer Form Wrapper */}
+              <form
+                onSubmit={handleSubmit}
+                className="flex flex-col flex-1 min-h-0 relative z-10 w-full"
+              >
+                {/* Scrollable Form Fields with Fade Mask */}
+                <div
+                  className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-5 sm:px-8 py-6 space-y-3 sm:space-y-5 w-full max-w-[320px] mx-auto sm:max-w-none scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent"
+                  style={{
+                    maskImage:
+                      "linear-gradient(to bottom, transparent 0px, black 24px, black calc(100% - 24px), transparent 100%)",
+                    WebkitMaskImage:
+                      "linear-gradient(to bottom, transparent 0px, black 24px, black calc(100% - 24px), transparent 100%)",
+                  }}
                 >
                   {/* ── Currency selector ── */}
                   <div className="space-y-2">
@@ -527,22 +527,22 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
                       )}
                     </AnimatePresence>
                   </div>
+                </div>
 
-                  {/* ── Submit ── */}
-                  <div className="pt-4">
-                    <button
-                      type="submit"
-                      className="w-full bg-teal-500 hover:bg-teal-400 text-slate-900 font-bold py-3.5 px-6 rounded-full shadow-[0_0_20px_rgba(20,184,166,0.3)] transition-all duration-300 hover:shadow-[0_0_30px_rgba(20,184,166,0.5)] transform hover:-translate-y-0.5 text-base uppercase tracking-wide"
-                    >
-                      {editingTransaction ? "Save Changes" : "Save Transaction"}
-                    </button>
-                  </div>
-                </form>
-              </div>
-            </motion.div>
+                {/* ── Submit (Fixed Footer) ── */}
+                <div className="shrink-0 p-5 sm:p-8 pt-2 sm:pt-4 border-t border-white/5 bg-slate-900/10">
+                  <button
+                    type="submit"
+                    className="w-full bg-teal-500 hover:bg-teal-400 text-slate-900 font-bold py-3.5 px-6 rounded-full shadow-[0_0_20px_rgba(20,184,166,0.3)] transition-all duration-300 hover:shadow-[0_0_30px_rgba(20,184,166,0.5)] transform hover:-translate-y-0.5 text-base uppercase tracking-wide"
+                  >
+                    {editingTransaction ? "Save Changes" : "Save Transaction"}
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
-        )}
-      </AnimatePresence>
+        </div>
+      )}
     </>
   );
 };

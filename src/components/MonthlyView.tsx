@@ -6,7 +6,7 @@ import { GlassCard } from "./ui/GlassCard";
 
 interface MonthlyViewProps {
   transactions: Transaction[];
-  onEdit: (tx: Transaction) => void;
+  onEdit: (tx: Transaction, target?: HTMLElement) => void;
   onDelete: (id: string) => void;
   editingTransactionId?: string | null;
   isModalOpen?: boolean;

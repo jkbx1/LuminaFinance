@@ -13,6 +13,7 @@ import {
   writeBatch,
 } from "firebase/firestore";
 
+import { flushSync } from "react-dom";
 import { db } from "../lib/firebase";
 import { useAuth } from "../context/AuthContext";
 import { Background3D } from "./ui/Background3D";
@@ -258,24 +259,86 @@ export const Dashboard: React.FC = () => {
   };
 
   const openAddModal = () => {
-    setEditingTransaction(null);
-    if (view === "overview") {
-      setSelectedCalendarDate(new Date());
+    const isMobile = window.innerWidth < 640;
+    const targetId = isMobile ? "fab-add-button-mobile" : "fab-add-button";
+    const target = document.getElementById(targetId);
+    if (target) target.style.viewTransitionName = "modal-morph";
+
+    if (!document.startViewTransition) {
+      if (target) target.style.viewTransitionName = "";
+      setEditingTransaction(null);
+      if (view === "overview") setSelectedCalendarDate(new Date());
+      setIsModalOpen(true);
+      return;
     }
-    setIsModalOpen(true);
+
+    document.startViewTransition(() => {
+      if (target) target.style.viewTransitionName = "";
+      flushSync(() => {
+        setEditingTransaction(null);
+        if (view === "overview") setSelectedCalendarDate(new Date());
+        setIsModalOpen(true);
+      });
+    });
   };
 
-  const openEditModal = (transaction: Transaction) => {
-    setEditingTransaction(transaction);
-    setIsModalOpen(true);
+  const openEditModal = (
+    transaction: Transaction,
+    passedTarget?: HTMLElement,
+  ) => {
+    const targetId = `expense-card-${transaction.id}`;
+    const target = passedTarget || document.getElementById(targetId);
+    if (target) {
+      target.style.viewTransitionName = "modal-morph";
+    }
+
+    if (!document.startViewTransition) {
+      if (target) target.style.viewTransitionName = "";
+      setEditingTransaction(transaction);
+      setIsModalOpen(true);
+      return;
+    }
+
+    document.startViewTransition(() => {
+      if (target) target.style.viewTransitionName = "";
+      flushSync(() => {
+        setEditingTransaction(transaction);
+        setIsModalOpen(true);
+      });
+    });
   };
 
   const closeModal = () => {
-    setIsModalOpen(false);
-    // Clean up after the morph animation completes (~500ms)
-    setTimeout(() => {
-      setEditingTransaction(null);
-    }, 300);
+    const isMobile = window.innerWidth < 640;
+    const defaultTargetId = isMobile
+      ? "fab-add-button-mobile"
+      : "fab-add-button";
+    const targetId = editingTransaction
+      ? `expense-card-${editingTransaction.id}`
+      : defaultTargetId;
+
+    if (!document.startViewTransition) {
+      setIsModalOpen(false);
+      setTimeout(() => {
+        setEditingTransaction(null);
+      }, 300);
+      return;
+    }
+
+    const transition = document.startViewTransition(() => {
+      flushSync(() => {
+        setIsModalOpen(false);
+        setEditingTransaction(null);
+      });
+      // After flushSync, the new DOM layout is applied
+      const target = document.getElementById(targetId);
+      if (target) target.style.viewTransitionName = "modal-morph";
+    });
+
+    transition.finished.finally(() => {
+      const target = document.getElementById(targetId);
+      if (target) target.style.viewTransitionName = "";
+    });
   };
 
   const filteredBalanceTransactions = transactions.filter((tx) => {
@@ -401,7 +464,7 @@ export const Dashboard: React.FC = () => {
       <div className="min-h-screen pt-8 pb-20 px-4 md:px-8 relative z-0 selection:bg-teal-500/30">
         <Background3D />
 
-        <div className="max-w-5xl mx-auto">
+        <div className="max-w-7xl mx-auto">
           <header className="flex flex-col md:flex-row md:items-center justify-between gap-5 mb-8">
             {/* Top Row on Mobile: Logo and Logout */}
             <div className="flex items-center justify-between w-full md:w-auto md:gap-8">
@@ -451,7 +514,7 @@ export const Dashboard: React.FC = () => {
             <div className="flex flex-col md:flex-row md:items-center justify-between w-full md:w-auto gap-4 mt-4 md:mt-0">
               <div className="flex flex-col lg:flex-row items-center justify-center lg:justify-start gap-3 w-full md:w-auto">
                 {/* View Toggle */}
-                <div className="flex bg-white/5 p-1 rounded-full border border-white/10 backdrop-blur-sm shrink-0 w-full lg:w-auto justify-center">
+                <div className="hidden sm:flex bg-white/5 p-1 rounded-full border border-white/10 backdrop-blur-sm shrink-0 w-full lg:w-auto justify-center">
                   <button
                     onClick={() => setView("overview")}
                     className={`relative flex-1 sm:flex-none px-3 sm:px-4 py-1.5 text-xs sm:text-sm font-medium rounded-full z-10 transition-colors ${
@@ -561,10 +624,10 @@ export const Dashboard: React.FC = () => {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -30 }}
                 transition={{ duration: 0.3, ease: "easeInOut" }}
-                className="grid grid-cols-1 lg:grid-cols-3 gap-8"
+                className="grid grid-cols-1 lg:grid-cols-3 xl:grid-cols-4 gap-6 xl:gap-8"
               >
                 {/* Left Column: Summary & Chart */}
-                <div className="lg:col-span-1 space-y-8 relative z-20">
+                <div className="lg:col-span-1 xl:col-span-1 space-y-6 relative z-20">
                   <GlassCard className="relative overflow-hidden">
                     <div className="absolute -top-10 -right-10 w-40 h-40 bg-teal-500/20 blur-[50px] rounded-full pointer-events-none" />
                     <div className="flex items-center justify-between mb-1 relative z-10">
@@ -733,7 +796,7 @@ export const Dashboard: React.FC = () => {
                 </div>
 
                 {/* Right Column: Transactions List */}
-                <div className="lg:col-span-2">
+                <div className="lg:col-span-2 xl:col-span-3">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                     <h3 className="text-2xl font-bold text-white tracking-tight">
                       Recent Transactions{" "}
@@ -834,6 +897,7 @@ export const Dashboard: React.FC = () => {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 30 }}
                 transition={{ duration: 0.3, ease: "easeInOut" }}
+                className="w-full"
               >
                 <MonthlyView
                   transactions={transactions}
@@ -851,23 +915,74 @@ export const Dashboard: React.FC = () => {
           </AnimatePresence>
         </div>
 
-        {/* Floating Action Button */}
-        <AnimatePresence>
-          {!isModalOpen && !editingTransaction && (
-            <motion.button
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.8 }}
-              whileHover={{ scale: 1.05, rotate: 90 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={openAddModal}
-              transition={{ type: "spring", stiffness: 350, damping: 25 }}
-              className="fixed bottom-8 right-8 w-16 h-16 bg-teal-500 rounded-full flex items-center justify-center text-slate-900 shadow-[0_0_30px_rgba(20,184,166,0.6)] z-40 transition-shadow hover:shadow-[0_0_40px_rgba(20,184,166,0.8)]"
-            >
-              <Plus className="w-8 h-8 pointer-events-none" />
-            </motion.button>
-          )}
-        </AnimatePresence>
+        {/* Mobile View Navigation (Bottom Bar) */}
+        <div className="fixed bottom-0 left-0 right-0 z-40 sm:hidden pb-safe">
+          <div className="bg-slate-900/80 backdrop-blur-xl border-t border-white/10 p-3 px-4 relative w-full h-[76px] flex items-center justify-between gap-3 shadow-[0_-10px_40px_rgba(0,0,0,0.3)]">
+            <div className="flex gap-1 flex-1 bg-white/5 p-1 rounded-full border border-white/10 backdrop-blur-md">
+              <button
+                onClick={() => setView("overview")}
+                className={`flex-1 flex flex-col items-center justify-center py-2 px-3 rounded-full text-[10px] font-bold tracking-wider uppercase transition-colors relative z-10 ${
+                  view === "overview"
+                    ? "text-teal-950"
+                    : "text-slate-400 hover:text-slate-200"
+                }`}
+              >
+                {view === "overview" && (
+                  <motion.div
+                    layoutId="view-highlight-mobile"
+                    className="absolute inset-0 bg-teal-400 rounded-full z-[-1]"
+                    transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                  />
+                )}
+                Overview
+              </button>
+              <button
+                onClick={() => setView("monthly")}
+                className={`flex-1 flex flex-col items-center justify-center py-2 px-3 rounded-full text-[10px] font-bold tracking-wider uppercase transition-colors relative z-10 ${
+                  view === "monthly"
+                    ? "text-teal-950"
+                    : "text-slate-400 hover:text-slate-200"
+                }`}
+              >
+                {view === "monthly" && (
+                  <motion.div
+                    layoutId="view-highlight-mobile"
+                    className="absolute inset-0 bg-teal-400 rounded-full z-[-1]"
+                    transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                  />
+                )}
+                Monthly
+              </button>
+            </div>
+
+            {/* Add Button incorporated into Navbar */}
+            <div className="relative shrink-0 flex items-center justify-center">
+              <button
+                id="fab-add-button-mobile"
+                onClick={openAddModal}
+                className={`flex items-center justify-center gap-1.5 bg-teal-500 rounded-full h-11 px-5 text-slate-900 shadow-[0_0_20px_rgba(20,184,166,0.5)] transition-all active:scale-95 ${
+                  isModalOpen || editingTransaction
+                    ? "opacity-0 pointer-events-none scale-75"
+                    : "opacity-100 pointer-events-auto scale-100"
+                }`}
+              >
+                <Plus className="w-5 h-5 pointer-events-none" />
+                <span className="font-bold tracking-wide">Add</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Floating Action Button (Desktop Only) */}
+        {!isModalOpen && !editingTransaction && (
+          <button
+            id="fab-add-button"
+            onClick={openAddModal}
+            className="hidden sm:flex fixed bottom-8 right-8 w-16 h-16 bg-teal-500 rounded-full items-center justify-center text-slate-900 shadow-[0_0_30px_rgba(20,184,166,0.5)] z-50 transition-all hover:shadow-[0_0_40px_rgba(20,184,166,0.8)] hover:scale-105 active:scale-95 hover:rotate-90 animate-in fade-in zoom-in-50 duration-300"
+          >
+            <Plus className="w-8 h-8 pointer-events-none transition-transform" />
+          </button>
+        )}
 
         <AddExpenseModal
           isOpen={isModalOpen}
