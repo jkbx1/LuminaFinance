@@ -232,7 +232,7 @@ const ExpenseCardComponent: React.FC<ExpenseCardProps> = ({
 
   const renderAmounts = () => (
     <motion.div
-      layoutId={`amounts-${transaction.id}`}
+      layoutId={isMobileChrome ? undefined : `amounts-${transaction.id}`}
       className="flex flex-col items-end gap-0.5 shrink-0"
     >
       <div className="flex items-center gap-1">
@@ -284,12 +284,23 @@ const ExpenseCardComponent: React.FC<ExpenseCardProps> = ({
       >
         <motion.div
           layout={!isMobileChrome}
-          className="relative w-full h-full group transition-transform hover:scale-[1.01]"
+          className={`relative w-full h-full group ${
+            isMobileChrome ? "" : "transition-transform hover:scale-[1.01]"
+          }`}
         >
           {/* Hover Background Container wraps the entire inner card visually */}
           <motion.div
             layout={!isMobileChrome}
             style={{ borderRadius: 16, overflow: "hidden" }}
+            initial={false}
+            animate={
+              isMobileChrome
+                ? { opacity: isExpanded ? 1 : 0.96 }
+                : undefined
+            }
+            transition={
+              isMobileChrome ? { duration: 0.18, ease: "easeOut" } : undefined
+            }
             className={`glass-panel border group-hover:bg-white/15 transition-all duration-300 relative transform-gpu will-change-transform ${isExpanded ? "bg-white/10 border-white/20 shadow-xl shadow-black/20" : "border-white/5 group-hover:border-white/20"}`}
           >
             {/* Inner Content that fades out/in when editing */}
@@ -306,7 +317,9 @@ const ExpenseCardComponent: React.FC<ExpenseCardProps> = ({
                   <div className="flex justify-between items-start w-full">
                     <div className="flex items-start gap-3 sm:gap-4 flex-1 min-w-0 pr-4">
                       <motion.div
-                        layoutId={`icon-${transaction.id}`}
+                        layoutId={
+                          isMobileChrome ? undefined : `icon-${transaction.id}`
+                        }
                         className="p-3 bg-white/5 rounded-2xl border border-white/10 backdrop-blur-md shrink-0"
                       >
                         <CategoryIcon
@@ -316,13 +329,19 @@ const ExpenseCardComponent: React.FC<ExpenseCardProps> = ({
                       </motion.div>
                       <div className="min-w-0 flex-1 pt-0.5">
                         <motion.h3
-                          layoutId={`title-${transaction.id}`}
+                          layoutId={
+                            isMobileChrome ? undefined : `title-${transaction.id}`
+                          }
                           className="text-slate-100 font-semibold text-lg sm:text-xl break-words leading-tight"
                         >
                           {transaction.title}
                         </motion.h3>
                         <motion.div
-                          layoutId={`category-${transaction.id}`}
+                          layoutId={
+                            isMobileChrome
+                              ? undefined
+                              : `category-${transaction.id}`
+                          }
                           initial={{ opacity: 0 }}
                           animate={{ opacity: 1 }}
                           className="mt-1.5 flex items-center gap-1.5"
@@ -339,7 +358,9 @@ const ExpenseCardComponent: React.FC<ExpenseCardProps> = ({
 
                   <div className="flex justify-between items-end w-full mt-1 pt-3 sm:pt-4 border-t border-white/5">
                     <motion.p
-                      layoutId={`time-${transaction.id}`}
+                      layoutId={
+                        isMobileChrome ? undefined : `time-${transaction.id}`
+                      }
                       className="text-slate-400 text-sm font-medium"
                     >
                       {transaction.date.toLocaleString(undefined, {
@@ -358,7 +379,9 @@ const ExpenseCardComponent: React.FC<ExpenseCardProps> = ({
                 <>
                   <div className="flex items-center gap-2 sm:gap-4 flex-1 min-w-0">
                     <motion.div
-                      layoutId={`icon-${transaction.id}`}
+                      layoutId={
+                        isMobileChrome ? undefined : `icon-${transaction.id}`
+                      }
                       className="p-2.5 sm:p-3 bg-white/5 rounded-xl sm:rounded-2xl border border-white/10 backdrop-blur-md shrink-0"
                     >
                       <CategoryIcon
@@ -368,13 +391,17 @@ const ExpenseCardComponent: React.FC<ExpenseCardProps> = ({
                     </motion.div>
                     <div className="min-w-0 flex-1">
                       <motion.h3
-                        layoutId={`title-${transaction.id}`}
+                        layoutId={
+                          isMobileChrome ? undefined : `title-${transaction.id}`
+                        }
                         className="text-slate-200 font-medium text-base sm:text-lg overflow-hidden text-ellipsis whitespace-nowrap"
                       >
                         {transaction.title}
                       </motion.h3>
                       <motion.p
-                        layoutId={`time-${transaction.id}`}
+                        layoutId={
+                          isMobileChrome ? undefined : `time-${transaction.id}`
+                        }
                         className="text-slate-400 text-xs sm:text-sm overflow-hidden text-ellipsis whitespace-nowrap"
                       >
                         {transaction.date.toLocaleTimeString(undefined, {

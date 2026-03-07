@@ -50,6 +50,9 @@ export const Dashboard: React.FC = () => {
     "daily" | "weekly" | "monthly" | "yearly" | "all"
   >("all");
 
+  // Detect mobile Chrome to avoid heavy View Transitions there
+  const [isMobileChrome, setIsMobileChrome] = useState(false);
+
   // ── Default display currency & live exchange rates ──────────────────────
   const [defaultCurrency, setDefaultCurrency] = useState<string>(
     () => localStorage.getItem("lumina_default_currency") ?? "USD",
@@ -68,6 +71,16 @@ export const Dashboard: React.FC = () => {
         setRatesLoading(false);
       })
       .catch(() => setRatesLoading(false));
+  }, []);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const ua = window.navigator.userAgent || "";
+      const isAndroid = /Android/i.test(ua);
+      const isChrome =
+        /Chrome/i.test(ua) && !/Edg/i.test(ua) && !/OPR/i.test(ua);
+      setIsMobileChrome(isAndroid && isChrome);
+    }
   }, []);
 
   /** Convert an amount from `from` currency into `defaultCurrency`. */
@@ -268,9 +281,9 @@ export const Dashboard: React.FC = () => {
     const isMobile = window.innerWidth < 640;
     const targetId = isMobile ? "fab-add-button-mobile" : "fab-add-button";
     const target = document.getElementById(targetId);
-    if (target) target.style.viewTransitionName = "modal-morph";
+    if (target && !isMobileChrome) target.style.viewTransitionName = "modal-morph";
 
-    if (!document.startViewTransition) {
+    if (!document.startViewTransition || isMobileChrome) {
       if (target) target.style.viewTransitionName = "";
       setEditingTransaction(null);
       if (view === "overview") setSelectedCalendarDate(new Date());
@@ -292,11 +305,11 @@ export const Dashboard: React.FC = () => {
     (transaction: Transaction, passedTarget?: HTMLElement) => {
       const targetId = `expense-card-${transaction.id}`;
       const target = passedTarget || document.getElementById(targetId);
-      if (target) {
+      if (target && !isMobileChrome) {
         target.style.viewTransitionName = "modal-morph";
       }
 
-      if (!document.startViewTransition) {
+      if (!document.startViewTransition || isMobileChrome) {
         if (target) target.style.viewTransitionName = "";
         setEditingTransaction(transaction);
         setIsModalOpen(true);
@@ -311,7 +324,7 @@ export const Dashboard: React.FC = () => {
         });
       });
     },
-    [],
+    [isMobileChrome],
   );
 
   const closeModal = () => {
@@ -323,7 +336,7 @@ export const Dashboard: React.FC = () => {
       ? `expense-card-${editingTransaction.id}`
       : defaultTargetId;
 
-    if (!document.startViewTransition) {
+    if (!document.startViewTransition || isMobileChrome) {
       setIsModalOpen(false);
       setTimeout(() => {
         setEditingTransaction(null);

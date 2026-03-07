@@ -73,6 +73,19 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
   const [customCategoryDraft, setCustomCategoryDraft] = useState("");
   const customInputRef = useRef<HTMLInputElement>(null);
 
+  // Detect mobile Chrome to simplify heavy modal animations there
+  const [isMobileChrome, setIsMobileChrome] = useState(false);
+
+  React.useEffect(() => {
+    if (typeof window !== "undefined") {
+      const ua = window.navigator.userAgent || "";
+      const isAndroid = /Android/i.test(ua);
+      const isChrome =
+        /Chrome/i.test(ua) && !/Edg/i.test(ua) && !/OPR/i.test(ua);
+      setIsMobileChrome(isAndroid && isChrome);
+    }
+  }, []);
+
   // Populate form when opening
   React.useEffect(() => {
     if (isOpen && editingTransaction) {
@@ -181,11 +194,15 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
       {isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 pointer-events-none pb-safe">
           <div
-            className="relative w-full max-w-md flex flex-col pointer-events-auto glass-panel shadow-2xl border border-white/20 animate-in fade-in zoom-in-95 duration-300 rounded-3xl"
+            className={`relative w-full max-w-md flex flex-col pointer-events-auto glass-panel shadow-2xl border border-white/20 rounded-3xl ${
+              isMobileChrome
+                ? "animate-in fade-in duration-200"
+                : "animate-in fade-in zoom-in-95 duration-300"
+            }`}
             style={{
               maxHeight: "95dvh",
               overflow: "hidden",
-              viewTransitionName: "modal-morph",
+              viewTransitionName: isMobileChrome ? undefined : "modal-morph",
             }}
           >
             <div className="relative z-10 w-full flex-1 min-h-0 flex flex-col items-stretch h-full max-h-[95dvh]">
