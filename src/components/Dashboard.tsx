@@ -36,7 +36,6 @@ export const Dashboard: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] =
     useState<Transaction | null>(null);
-  const [activeLayoutId, setActiveLayoutId] = useState("add-expense-modal");
   const [view, setView] = useState<"overview" | "monthly">("overview");
   const [selectedCalendarDate, setSelectedCalendarDate] = useState<Date | null>(
     new Date(),
@@ -104,6 +103,7 @@ export const Dashboard: React.FC = () => {
                 amount: data.amount,
                 type: data.type,
                 category: data.category,
+                customIcon: data.customIcon,
                 currency: data.currency ?? "USD",
                 date: data.date?.toDate() || new Date(),
               });
@@ -240,6 +240,7 @@ export const Dashboard: React.FC = () => {
             amount: item.amount,
             type: item.type,
             category: item.category,
+            ...(item.customIcon ? { customIcon: item.customIcon } : {}),
             currency: item.currency ?? "USD",
             date: new Date(item.date),
           });
@@ -258,7 +259,6 @@ export const Dashboard: React.FC = () => {
 
   const openAddModal = () => {
     setEditingTransaction(null);
-    setActiveLayoutId("add-expense-modal");
     if (view === "overview") {
       setSelectedCalendarDate(new Date());
     }
@@ -267,7 +267,6 @@ export const Dashboard: React.FC = () => {
 
   const openEditModal = (transaction: Transaction) => {
     setEditingTransaction(transaction);
-    setActiveLayoutId(`expense-card-${transaction.id}`);
     setIsModalOpen(true);
   };
 
@@ -276,8 +275,7 @@ export const Dashboard: React.FC = () => {
     // Clean up after the morph animation completes (~500ms)
     setTimeout(() => {
       setEditingTransaction(null);
-      setActiveLayoutId("add-expense-modal");
-    }, 500);
+    }, 300);
   };
 
   const filteredBalanceTransactions = transactions.filter((tx) => {
@@ -857,16 +855,16 @@ export const Dashboard: React.FC = () => {
         <AnimatePresence>
           {!isModalOpen && !editingTransaction && (
             <motion.button
-              layoutId="add-expense-modal"
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.8 }}
               whileHover={{ scale: 1.05, rotate: 90 }}
               whileTap={{ scale: 0.95 }}
               onClick={openAddModal}
-              className="fixed bottom-8 right-8 w-16 h-16 bg-teal-500 rounded-full flex gap-0 items-center justify-center text-slate-900 shadow-[0_0_30px_rgba(20,184,166,0.6)] z-40 transition-shadow hover:shadow-[0_0_40px_rgba(20,184,166,0.8)]"
+              transition={{ type: "spring", stiffness: 350, damping: 25 }}
+              className="fixed bottom-8 right-8 w-16 h-16 bg-teal-500 rounded-full flex items-center justify-center text-slate-900 shadow-[0_0_30px_rgba(20,184,166,0.6)] z-40 transition-shadow hover:shadow-[0_0_40px_rgba(20,184,166,0.8)]"
             >
-              <Plus className="w-8 h-8" />
+              <Plus className="w-8 h-8 pointer-events-none" />
             </motion.button>
           )}
         </AnimatePresence>
@@ -877,7 +875,6 @@ export const Dashboard: React.FC = () => {
           onAdd={handleAddTransaction}
           editingTransaction={editingTransaction}
           onEdit={handleEditTransaction}
-          layoutId={activeLayoutId}
           defaultDate={selectedCalendarDate || new Date()}
         />
       </div>
