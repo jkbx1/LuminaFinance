@@ -180,25 +180,32 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
     (!EXPENSE_CATEGORIES.find((c) => c.id === category) &&
       !INCOME_CATEGORIES.find((c) => c.id === category));
 
+  const modalTransition = { duration: 0.22, ease: "easeOut" as const };
+
   return (
-    <>
-      {/* Backdrop */}
+    <AnimatePresence>
       {isOpen && (
-        <div
-          className="fixed inset-0 z-40 bg-slate-950/60 backdrop-blur-md transition-opacity animate-in fade-in duration-300"
+        <motion.div
+          key="modal-backdrop"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={modalTransition}
+          className="fixed inset-0 z-40 bg-slate-950/60 backdrop-blur-md"
           onClick={onClose}
         />
       )}
-
-      {/* Standard CSS View Transition Modal */}
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 pointer-events-none pb-safe">
+        <motion.div
+          key="modal-panel"
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.95 }}
+          transition={modalTransition}
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 pointer-events-none pb-safe"
+        >
           <div
-            className={`relative w-full max-w-md flex flex-col pointer-events-auto glass-panel shadow-2xl border border-white/20 rounded-3xl ${
-              isMobileChrome
-                ? "animate-in fade-in duration-200"
-                : "animate-in fade-in zoom-in-95 duration-300"
-            }`}
+            className="relative w-full max-w-md flex flex-col pointer-events-auto glass-panel shadow-2xl border border-white/20 rounded-3xl"
             style={{
               maxHeight: "95dvh",
               overflow: "hidden",
@@ -558,8 +565,8 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
               </form>
             </div>
           </div>
-        </div>
+        </motion.div>
       )}
-    </>
+    </AnimatePresence>
   );
 };
