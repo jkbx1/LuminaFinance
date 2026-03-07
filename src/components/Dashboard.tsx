@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
-import { Plus, LogOut, Wallet } from "lucide-react";
+import { Plus, LogOut } from "lucide-react";
 import {
   collection,
   query,
@@ -71,12 +71,15 @@ export const Dashboard: React.FC = () => {
   }, []);
 
   /** Convert an amount from `from` currency into `defaultCurrency`. */
-  const convertToDefault = (amount: number, from: string): number => {
-    if (from === defaultCurrency || ratesLoading) return amount;
-    const fromRate = exchangeRates[from] ?? 1;
-    const toRate = exchangeRates[defaultCurrency] ?? 1;
-    return (amount / fromRate) * toRate;
-  };
+  const convertToDefault = React.useCallback(
+    (amount: number, from: string): number => {
+      if (from === defaultCurrency || ratesLoading) return amount;
+      const fromRate = exchangeRates[from] ?? 1;
+      const toRate = exchangeRates[defaultCurrency] ?? 1;
+      return (amount / fromRate) * toRate;
+    },
+    [defaultCurrency, ratesLoading, exchangeRates],
+  );
 
   const handleDefaultCurrencyChange = (code: string) => {
     setDefaultCurrency(code);
@@ -192,23 +195,26 @@ export const Dashboard: React.FC = () => {
     }
   };
 
-  const handleDeleteTransaction = async (id: string) => {
-    if (user) {
-      try {
-        await deleteDoc(doc(db, `users/${user.uid}/transactions`, id));
-      } catch (error) {
-        console.error(
-          "Error deleting transaction: Failed to delete from database.",
-        );
+  const handleDeleteTransaction = React.useCallback(
+    async (id: string) => {
+      if (user) {
+        try {
+          await deleteDoc(doc(db, `users/${user.uid}/transactions`, id));
+        } catch (error) {
+          console.error(
+            "Error deleting transaction: Failed to delete from database.",
+          );
+        }
+      } else if (isGuest) {
+        setTransactions((prev) => {
+          const updated = prev.filter((tx) => tx.id !== id);
+          saveGuestData(updated);
+          return updated;
+        });
       }
-    } else if (isGuest) {
-      setTransactions((prev) => {
-        const updated = prev.filter((tx) => tx.id !== id);
-        saveGuestData(updated);
-        return updated;
-      });
-    }
-  };
+    },
+    [user, isGuest],
+  );
 
   const handleLoginAndSync = async () => {
     if (isSyncing) return;
@@ -282,31 +288,31 @@ export const Dashboard: React.FC = () => {
     });
   };
 
-  const openEditModal = (
-    transaction: Transaction,
-    passedTarget?: HTMLElement,
-  ) => {
-    const targetId = `expense-card-${transaction.id}`;
-    const target = passedTarget || document.getElementById(targetId);
-    if (target) {
-      target.style.viewTransitionName = "modal-morph";
-    }
+  const openEditModal = React.useCallback(
+    (transaction: Transaction, passedTarget?: HTMLElement) => {
+      const targetId = `expense-card-${transaction.id}`;
+      const target = passedTarget || document.getElementById(targetId);
+      if (target) {
+        target.style.viewTransitionName = "modal-morph";
+      }
 
-    if (!document.startViewTransition) {
-      if (target) target.style.viewTransitionName = "";
-      setEditingTransaction(transaction);
-      setIsModalOpen(true);
-      return;
-    }
-
-    document.startViewTransition(() => {
-      if (target) target.style.viewTransitionName = "";
-      flushSync(() => {
+      if (!document.startViewTransition) {
+        if (target) target.style.viewTransitionName = "";
         setEditingTransaction(transaction);
         setIsModalOpen(true);
+        return;
+      }
+
+      document.startViewTransition(() => {
+        if (target) target.style.viewTransitionName = "";
+        flushSync(() => {
+          setEditingTransaction(transaction);
+          setIsModalOpen(true);
+        });
       });
-    });
-  };
+    },
+    [],
+  );
 
   const closeModal = () => {
     const isMobile = window.innerWidth < 640;
@@ -469,8 +475,12 @@ export const Dashboard: React.FC = () => {
             {/* Top Row on Mobile: Logo and Logout */}
             <div className="flex items-center justify-between w-full md:w-auto md:gap-8">
               <div className="flex items-center gap-2 md:gap-3 shrink-0 min-w-0">
-                <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-teal-500/20 flex items-center justify-center border border-teal-500/30 shadow-[0_0_15px_rgba(20,184,166,0.2)] shrink-0">
-                  <Wallet className="w-4 h-4 md:w-5 md:h-5 text-teal-400" />
+                <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-teal-500/10 flex items-center justify-center border border-teal-500/20 shadow-[0_0_15px_rgba(20,184,166,0.15)] shrink-0 overflow-hidden p-1.5">
+                  <img
+                    src="/icon.svg"
+                    alt="Lumina Icon"
+                    className="w-full h-full object-contain"
+                  />
                 </div>
                 <div className="min-w-0">
                   <h1 className="text-lg md:text-xl font-bold text-white tracking-tight truncate">

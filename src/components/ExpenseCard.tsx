@@ -118,7 +118,8 @@ const CategoryIcon = ({
   }
 };
 
-export const ExpenseCard: React.FC<ExpenseCardProps> = ({
+// Rename base component to allow React.memo wrapping below
+const ExpenseCardComponent: React.FC<ExpenseCardProps> = ({
   transaction,
   onEdit,
   onDelete,
@@ -258,7 +259,7 @@ export const ExpenseCard: React.FC<ExpenseCardProps> = ({
     <motion.div
       layout
       id={`expense-card-${transaction.id}`}
-      className={`relative ${isHovered || isExpanded ? "z-30" : "z-10"} ${isEditing ? "pointer-events-none" : ""}`}
+      className={`relative transform-gpu will-change-transform ${isHovered || isExpanded ? "z-30" : "z-10"} ${isEditing ? "pointer-events-none" : ""}`}
     >
       <div
         onMouseEnter={isHoverable ? () => setIsHovered(true) : undefined}
@@ -277,7 +278,7 @@ export const ExpenseCard: React.FC<ExpenseCardProps> = ({
           <motion.div
             layout
             style={{ borderRadius: 16, overflow: "hidden" }}
-            className={`glass-panel border group-hover:bg-white/15 transition-all duration-300 relative ${isExpanded ? "bg-white/10 border-white/20 shadow-xl shadow-black/20" : "border-white/5 group-hover:border-white/20"}`}
+            className={`glass-panel border group-hover:bg-white/15 transition-all duration-300 relative transform-gpu will-change-transform ${isExpanded ? "bg-white/10 border-white/20 shadow-xl shadow-black/20" : "border-white/5 group-hover:border-white/20"}`}
           >
             {/* Inner Content that fades out/in when editing */}
             <motion.div
@@ -386,3 +387,14 @@ export const ExpenseCard: React.FC<ExpenseCardProps> = ({
     </motion.div>
   );
 };
+
+export const ExpenseCard = React.memo(ExpenseCardComponent, (prev, next) => {
+  return (
+    prev.transaction === next.transaction &&
+    prev.isEditing === next.isEditing &&
+    prev.defaultCurrency === next.defaultCurrency &&
+    prev.convertToDefault === next.convertToDefault &&
+    prev.onEdit === next.onEdit &&
+    prev.onDelete === next.onDelete
+  );
+});

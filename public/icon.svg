@@ -1,0 +1,26 @@
+<svg width="200" height="200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <filter id="lumina_3d_refined" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="-3" dy="-3" stdDeviation="6" flood-color="white" flood-opacity="0.3"/> <feDropShadow dx="3" dy="3" stdDeviation="6" flood-color="#0F172A" flood-opacity="0.5"/> </filter>
+
+    <linearGradient id="coinGradient3D" x1="120" y1="50" x2="180" y2="110" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFD700"/> <stop offset="0.5" stop-color="#FFC000"/> <stop offset="1" stop-color="#E6A800"/> </linearGradient>
+
+    <linearGradient id="glassGradientRefined" x1="130" y1="90" x2="160" y2="120" gradientUnits="userSpaceOnUse">
+      <stop stop-color="white" stop-opacity="0.3"/>
+      <stop offset="1" stop-color="white" stop-opacity="0.05"/>
+    </linearGradient>
+  </defs>
+
+  <g filter="url(#lumina_3d_refined)">
+    <path d="M40 70C40 47.9086 57.9086 30 80 30H120C142.091 30 160 47.9086 160 70V130C160 152.091 142.091 170 120 170H80C57.9086 170 40 152.091 40 130V70Z" fill="#1E293B" stroke="#38BDF8" stroke-width="2" stroke-opacity="0.5"/>
+    
+    <path d="M100 40C110 50 125 60 155 70C125 80 110 90 100 100C90 90 75 80 45 70C75 60 90 50 100 40Z" fill="#475569" stroke="white" stroke-width="1" stroke-opacity="0.1"/>
+
+    <rect x="135" y="80" width="30" height="40" rx="15" fill="#475569" stroke="#38BDF8" stroke-width="2" stroke-opacity="0.5"/>
+    <circle cx="150" cy="100" r="4" fill="#38BDF8"/> <circle cx="100" cy="90" r="30" fill="url(#coinGradient3D)" stroke="#E6A800" stroke-width="3" />
+    
+    <path d="M110 65C110 65 118 75 118 90C118 105 110 115 110 115" stroke="white" stroke-opacity="0.4" stroke-width="2"/>
+  </g>
+
+</svg>

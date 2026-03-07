@@ -80,6 +80,8 @@ export const GlassyDonutChart: React.FC<GlassyDonutChartProps> = ({
     ? 0
     : data.reduce((sum, item) => sum + item.value, 0);
 
+  const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
+
   return (
     <div className="relative w-full h-[250px] sm:h-[280px] md:h-[300px]">
       <ResponsiveContainer width="100%" height="100%">
@@ -108,7 +110,9 @@ export const GlassyDonutChart: React.FC<GlassyDonutChartProps> = ({
                 key={`cell-${index}`}
                 fill={entry.color}
                 style={{
-                  filter: `drop-shadow(0px 0px 8px ${entry.color}80)`,
+                  filter: isMobile
+                    ? "none"
+                    : `drop-shadow(0px 0px 8px ${entry.color}80)`,
                   outline: "none",
                 }}
               />
