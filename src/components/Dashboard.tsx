@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
+
 import { Plus, LogOut } from "lucide-react";
 import {
   collection,
@@ -50,8 +51,17 @@ export const Dashboard: React.FC = () => {
     "daily" | "weekly" | "monthly" | "yearly" | "all"
   >("all");
 
-  // Detect mobile Chrome to avoid heavy View Transitions there
-  const [isMobileChrome, setIsMobileChrome] = useState(false);
+  // Detect mobile Chrome synchronously — useMemo is correct on first render,
+  // avoiding the useEffect delay that could cause glitchy View Transitions
+  const isMobileChrome = useMemo(() => {
+    if (typeof window === "undefined") return false;
+    const ua = window.navigator.userAgent || "";
+    const isAndroid = /Android/i.test(ua);
+    const isChrome =
+      /Chrome/i.test(ua) && !/Edg/i.test(ua) && !/OPR/i.test(ua);
+    return isAndroid && isChrome;
+  }, []);
+
 
   // ── Default display currency & live exchange rates ──────────────────────
   const [defaultCurrency, setDefaultCurrency] = useState<string>(
@@ -73,15 +83,6 @@ export const Dashboard: React.FC = () => {
       .catch(() => setRatesLoading(false));
   }, []);
 
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const ua = window.navigator.userAgent || "";
-      const isAndroid = /Android/i.test(ua);
-      const isChrome =
-        /Chrome/i.test(ua) && !/Edg/i.test(ua) && !/OPR/i.test(ua);
-      setIsMobileChrome(isAndroid && isChrome);
-    }
-  }, []);
 
   /** Convert an amount from `from` currency into `defaultCurrency`. */
   const convertToDefault = React.useCallback(
@@ -334,7 +335,7 @@ export const Dashboard: React.FC = () => {
       ? "fab-add-button-mobile"
       : "fab-add-button";
     const targetId = editingTransaction
-      ? `expense-card-${editingTransaction.id}`
+      ? `edit-btn-${editingTransaction.id}`
       : defaultTargetId;
 
     if (!document.startViewTransition || isMobileChrome) {
@@ -350,14 +351,15 @@ export const Dashboard: React.FC = () => {
         setIsModalOpen(false);
         setEditingTransaction(null);
       });
-      // After flushSync, the new DOM layout is applied
+      // Modal is now unmounted — assign name to the target button so
+      // the browser uses it as the "new" snapshot endpoint.
       const target = document.getElementById(targetId);
       if (target) target.style.viewTransitionName = "modal-morph";
     });
 
     transition.finished.finally(() => {
-      const target = document.getElementById(targetId);
-      if (target) target.style.viewTransitionName = "";
+      const t = document.getElementById(targetId);
+      if (t) t.style.viewTransitionName = "";
     });
   };
 

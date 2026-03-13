@@ -134,22 +134,21 @@ const ExpenseCardComponent: React.FC<ExpenseCardProps> = ({
   // Check if device supports hover (desktop) vs touch (mobile)
   const [isHoverable, setIsHoverable] = useState(true);
 
-  // Detect mobile Chrome to soften heavy layout animations that cause jank there
-  const [isMobileChrome, setIsMobileChrome] = useState(false);
+  // Detect mobile Chrome synchronously — useMemo is correct on first render,
+  // avoiding the useEffect delay that could cause glitchy View Transitions
+  const isMobileChrome = React.useMemo(() => {
+    if (typeof window === "undefined") return false;
+    const ua = window.navigator.userAgent || "";
+    const isAndroid = /Android/i.test(ua);
+    const isChrome =
+      /Chrome/i.test(ua) && !/Edg/i.test(ua) && !/OPR/i.test(ua);
+    return isAndroid && isChrome;
+  }, []);
 
   React.useEffect(() => {
-    if (typeof window !== "undefined") {
-      setIsHoverable(
-        window.matchMedia("(hover: hover) and (pointer: fine)").matches,
-      );
-
-      const ua = window.navigator.userAgent || "";
-      const isAndroid = /Android/i.test(ua);
-      const isChrome =
-        /Chrome/i.test(ua) && !/Edg/i.test(ua) && !/OPR/i.test(ua);
-
-      setIsMobileChrome(isAndroid && isChrome);
-    }
+    setIsHoverable(
+      window.matchMedia("(hover: hover) and (pointer: fine)").matches,
+    );
   }, []);
 
   const handleMouseLeave = () => {

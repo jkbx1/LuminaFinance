@@ -73,17 +73,15 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
   const [customCategoryDraft, setCustomCategoryDraft] = useState("");
   const customInputRef = useRef<HTMLInputElement>(null);
 
-  // Detect mobile Chrome to simplify heavy modal animations there
-  const [isMobileChrome, setIsMobileChrome] = useState(false);
-
-  React.useEffect(() => {
-    if (typeof window !== "undefined") {
-      const ua = window.navigator.userAgent || "";
-      const isAndroid = /Android/i.test(ua);
-      const isChrome =
-        /Chrome/i.test(ua) && !/Edg/i.test(ua) && !/OPR/i.test(ua);
-      setIsMobileChrome(isAndroid && isChrome);
-    }
+  // Detect mobile Chrome synchronously — useMemo is correct on first render,
+  // avoiding the useEffect delay that caused glitchy animations on mobile Chrome
+  const isMobileChrome = React.useMemo(() => {
+    if (typeof window === "undefined") return false;
+    const ua = window.navigator.userAgent || "";
+    const isAndroid = /Android/i.test(ua);
+    const isChrome =
+      /Chrome/i.test(ua) && !/Edg/i.test(ua) && !/OPR/i.test(ua);
+    return isAndroid && isChrome;
   }, []);
 
   // Populate form when opening
@@ -183,36 +181,40 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
   const modalTransition = { duration: 0.22, ease: "easeOut" as const };
 
   return (
-    <AnimatePresence>
-      {isOpen && (
-        <motion.div
-          key="modal-backdrop"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={modalTransition}
-          className="fixed inset-0 z-40 bg-slate-950/60 backdrop-blur-md"
-          onClick={onClose}
-        />
-      )}
+    <>
+      {/* Backdrop in its own AnimatePresence — fades independently */}
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            key="modal-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={modalTransition}
+            className="fixed inset-0 z-40 bg-slate-950/60 backdrop-blur-md"
+            onClick={onClose}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Panel rendered directly (no AnimatePresence) — unmounts immediately
+          when isOpen is false, so the view transition close can snapshot the button cleanly */}
       {isOpen && (
         <motion.div
           key="modal-panel"
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.95 }}
           transition={modalTransition}
           className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 pointer-events-none pb-safe"
         >
-          <div
-            className="relative w-full max-w-md flex flex-col pointer-events-auto glass-panel shadow-2xl border border-white/20 rounded-3xl"
-            style={{
-              maxHeight: "95dvh",
-              overflow: "hidden",
-              viewTransitionName:
-                !isMobileChrome && isOpen ? "modal-morph" : undefined,
-            }}
-          >
+            <div
+              className="relative w-full max-w-md flex flex-col pointer-events-auto glass-panel shadow-2xl border border-white/20 rounded-3xl"
+              style={{
+                maxHeight: "95dvh",
+                overflow: "hidden",
+                viewTransitionName: !isMobileChrome ? "modal-morph" : undefined,
+              }}
+            >
             <div className="relative z-10 w-full flex-1 min-h-0 flex flex-col items-stretch h-full max-h-[95dvh]">
               <div className="absolute top-0 right-0 w-64 h-64 bg-purple-500/20 rounded-full blur-[60px] pointer-events-none -translate-y-1/2 translate-x-1/2" />
 
@@ -565,9 +567,9 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
                 </div>
               </form>
             </div>
-          </div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+            </div>
+          </motion.div>
+        )}
+    </>
   );
 };
