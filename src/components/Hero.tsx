@@ -65,51 +65,53 @@ export const Hero: React.FC = () => {
       className="min-h-screen w-full relative overflow-hidden flex flex-col"
     >
       <Background3D interactive={false} showSpotlight={false} gridSpacing={35} />
-      {/* Navbar */}
-      <motion.nav
-        initial={{ y: -50, opacity: 0 }}
+      {/* Floating Navbar */}
+      <motion.div
+        initial={{ y: -100, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 1, delay: 0.2, ease: customEasing }}
-        className="flex justify-between items-center p-6 max-w-7xl mx-auto w-full relative z-20"
+        transition={{ duration: 0.8, delay: 0.2, ease: customEasing }}
+        className="fixed top-6 left-0 right-0 z-30 px-4 md:px-6 pointer-events-none"
       >
-        <div className="flex items-center gap-4">
-          <ThemeToggle />
-          <div className="hidden md:flex items-center space-x-8 mr-8"></div>
-          <div className="flex items-center gap-3 px-6 py-2 rounded-full bg-bg-card/30 hover:bg-bg-card/50 backdrop-blur-md border border-bg-border shadow-lg transition-all duration-300">
-            <div className="w-6 h-6 rounded-full bg-accent/10 flex items-center justify-center border border-accent/20 shadow-[0_0_10px_rgba(255,0,55,0.15)] shrink-0 overflow-hidden p-1">
-              <img
-                src="/icon.svg"
-                alt="Lumina Icon"
-                className="w-full h-full object-contain"
-              />
+        <nav className="max-w-7xl mx-auto w-full flex items-center justify-between pointer-events-auto">
+          {/* Logo Pill */}
+          <div className="flex items-center gap-3 px-4 py-2.5 rounded-full glass-panel shadow-lg">
+            <div className="w-7 h-7 rounded-full bg-accent/20 flex items-center justify-center border border-accent/20 shadow-[0_0_10px_rgba(255,0,55,0.15)] shrink-0 overflow-hidden p-1">
+              <img src="/icon.svg" alt="Lumina Icon" className="w-full h-full object-contain" />
             </div>
-            <span className="text-bright font-bold tracking-widest text-xs uppercase">
+            <span className="text-bright font-bold tracking-widest text-xs uppercase hidden sm:block">
               Lumina Finance
             </span>
           </div>
-        </div>
 
-        <AnimatePresence mode="wait">
-          {!showAuth ? (
-            <motion.button
-              layoutId="auth-modal"
-              onClick={() => setShowAuth(true)}
-              transition={{ duration: 0.6, ease: customEasing }}
-              aria-label="Open authentication modal"
-              className="px-8 py-2.5 flex items-center gap-2 rounded-full bg-accent/10 hover:bg-accent/20 backdrop-blur-md border border-accent/30 shadow-[0_0_20px_rgba(255,0,55,0.1)] text-bright font-semibold transition-all duration-300"
-            >
-              <LogIn className="w-4 h-4" />
-              <span className="relative z-10 text-sm tracking-wide">
-                Sign In
-              </span>
-            </motion.button>
-          ) : (
-            <div className="px-8 py-2.5 opacity-0 pointer-events-none">
-              Placeholder
+          {/* Right Side — separated pills */}
+          <div className="flex items-center gap-2">
+            {/* Theme Toggle Pill */}
+            <div className="p-2 rounded-full glass-panel shadow-lg">
+              <ThemeToggle />
             </div>
-          )}
-        </AnimatePresence>
-      </motion.nav>
+
+            {/* Sign In Pill */}
+            <AnimatePresence mode="wait">
+              {!showAuth ? (
+                <motion.button
+                  layoutId="auth-modal"
+                  onClick={() => setShowAuth(true)}
+                  transition={{ duration: 0.6, ease: customEasing }}
+                  aria-label="Open authentication modal"
+                  className="px-5 py-2.5 flex items-center gap-2 rounded-full glass-panel border-accent/30 shadow-[0_0_20px_rgba(255,0,55,0.1)] text-bright font-semibold text-sm transition-all duration-300 hover:border-accent/50 hover:bg-accent/10"
+                >
+                  <LogIn className="w-4 h-4" />
+                  <span className="tracking-wide hidden sm:block">Sign In</span>
+                </motion.button>
+              ) : (
+                <div className="px-5 py-2.5 opacity-0 pointer-events-none">
+                  Placeholder
+                </div>
+              )}
+            </AnimatePresence>
+          </div>
+        </nav>
+      </motion.div>
 
       {/* Main Hero Content */}
       <div className="flex-1 flex flex-col items-center pt-24 pb-32 px-4 relative z-10">

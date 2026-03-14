@@ -216,7 +216,7 @@ export const Background3D: React.FC<Background3DProps> = ({
       window.removeEventListener("resize", handleResize);
       cancelAnimationFrame(animationFrameRef.current);
     };
-  }, [theme, interactive, showSpotlight]); // Re-init on theme or prop change
+  }, [theme, interactive, showSpotlight, gridSpacing]); // Re-init on theme or prop change
 
   return (
     <canvas
