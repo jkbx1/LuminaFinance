@@ -5,18 +5,11 @@ import {
   useTransform,
   AnimatePresence,
 } from "framer-motion";
-import {
-  Wallet,
-  PieChart,
-  Activity,
-  Cloud,
-  LogIn,
-  ChevronRight,
-  Zap,
-  Sparkles,
-} from "lucide-react";
+import { ChevronRight, PieChart, Wallet, Zap, Activity, Cloud, LogIn, Sparkles } from "lucide-react";
 import { AuthModal } from "./AuthModal";
 import { GlassButton } from "./ui/GlassButton";
+import { ThemeToggle } from "./ui/ThemeToggle";
+import { Background3D } from "./ui/Background3D";
 
 const customEasing: [number, number, number, number] = [0.22, 1, 0.36, 1];
 
@@ -71,6 +64,7 @@ export const Hero: React.FC = () => {
       }}
       className="min-h-screen w-full relative overflow-hidden flex flex-col"
     >
+      <Background3D interactive={false} showSpotlight={false} gridSpacing={35} />
       {/* Navbar */}
       <motion.nav
         initial={{ y: -50, opacity: 0 }}
@@ -78,17 +72,21 @@ export const Hero: React.FC = () => {
         transition={{ duration: 1, delay: 0.2, ease: customEasing }}
         className="flex justify-between items-center p-6 max-w-7xl mx-auto w-full relative z-20"
       >
-        <div className="flex items-center gap-3 px-6 py-2 rounded-full bg-white/5 hover:bg-white/10 backdrop-blur-md border border-white/20 shadow-lg transition-all duration-300">
-          <div className="w-6 h-6 rounded-full bg-teal-500/10 flex items-center justify-center border border-teal-500/20 shadow-[0_0_10px_rgba(20,184,166,0.15)] shrink-0 overflow-hidden p-1">
-            <img
-              src="/icon.svg"
-              alt="Lumina Icon"
-              className="w-full h-full object-contain"
-            />
+        <div className="flex items-center gap-4">
+          <ThemeToggle />
+          <div className="hidden md:flex items-center space-x-8 mr-8"></div>
+          <div className="flex items-center gap-3 px-6 py-2 rounded-full bg-bg-card/30 hover:bg-bg-card/50 backdrop-blur-md border border-bg-border shadow-lg transition-all duration-300">
+            <div className="w-6 h-6 rounded-full bg-accent/10 flex items-center justify-center border border-accent/20 shadow-[0_0_10px_rgba(255,0,55,0.15)] shrink-0 overflow-hidden p-1">
+              <img
+                src="/icon.svg"
+                alt="Lumina Icon"
+                className="w-full h-full object-contain"
+              />
+            </div>
+            <span className="text-bright font-bold tracking-widest text-xs uppercase">
+              Lumina Finance
+            </span>
           </div>
-          <span className="text-white font-bold tracking-widest text-xs uppercase">
-            Lumina Finance
-          </span>
         </div>
 
         <AnimatePresence mode="wait">
@@ -97,7 +95,8 @@ export const Hero: React.FC = () => {
               layoutId="auth-modal"
               onClick={() => setShowAuth(true)}
               transition={{ duration: 0.6, ease: customEasing }}
-              className="px-8 py-2.5 flex items-center gap-2 rounded-full bg-teal-500/20 hover:bg-teal-500/30 backdrop-blur-md border border-teal-500/50 shadow-[0_0_20px_rgba(20,184,166,0.2)] text-teal-300 font-semibold transition-all duration-300"
+              aria-label="Open authentication modal"
+              className="px-8 py-2.5 flex items-center gap-2 rounded-full bg-accent/10 hover:bg-accent/20 backdrop-blur-md border border-accent/30 shadow-[0_0_20px_rgba(255,0,55,0.1)] text-bright font-semibold transition-all duration-300"
             >
               <LogIn className="w-4 h-4" />
               <span className="relative z-10 text-sm tracking-wide">
@@ -115,13 +114,13 @@ export const Hero: React.FC = () => {
       {/* Main Hero Content */}
       <div className="flex-1 flex flex-col items-center pt-24 pb-32 px-4 relative z-10">
         {/* Glow */}
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[60vw] h-[60vw] max-w-2xl max-h-2xl bg-teal-500/10 rounded-full blur-[100px] pointer-events-none" />
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[60vw] h-[60vw] max-w-2xl max-h-2xl bg-accent/10 rounded-full blur-[100px] pointer-events-none" />
 
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1, delay: 0.1, ease: customEasing }}
-          className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-teal-500/30 bg-teal-500/10 text-teal-300 text-xs font-semibold tracking-widest uppercase mb-8 relative z-20"
+          className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-accent/30 bg-accent/10 text-accent text-xs font-semibold tracking-widest uppercase mb-8 relative z-20"
         >
           <Sparkles className="w-3.5 h-3.5" />
           The Future of Capital
@@ -131,10 +130,10 @@ export const Hero: React.FC = () => {
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1, delay: 0.2, ease: customEasing }}
-          className="text-6xl md:text-8xl font-black text-white text-center tracking-tighter leading-tight mb-6 max-w-4xl relative z-20 pointer-events-none"
+          className="text-6xl md:text-8xl font-black text-bright text-center tracking-tighter leading-tight mb-6 max-w-4xl relative z-20 pointer-events-none"
         >
           Evolve your <br />
-          <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-violet-500">
+          <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent via-accent to-bright">
             Wealth.
           </span>
         </motion.h1>
@@ -143,7 +142,7 @@ export const Hero: React.FC = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1, delay: 0.3, ease: customEasing }}
-          className="text-lg md:text-xl text-slate-400 text-center max-w-2xl mb-12 relative z-20 pointer-events-none"
+          className="text-lg md:text-xl text-muted text-center max-w-2xl mb-12 relative z-20 pointer-events-none"
         >
           The most intuitive way to track, manage, and grow your assets. Visual
           insights, real-time Firebase sync, and smart categorization in a
@@ -158,7 +157,7 @@ export const Hero: React.FC = () => {
         >
           <GlassButton
             onClick={() => setShowAuth(true)}
-            className="px-10 py-4 text-lg font-semibold bg-white text-slate-950 hover:bg-slate-200 shadow-[0_0_30px_rgba(255,255,255,0.2)] hover:shadow-[0_0_40px_rgba(255,255,255,0.4)]"
+            className="px-10 py-4 text-lg font-bold !bg-accent !text-white hover:!bg-accent-hover shadow-xl transition-all border-none"
           >
             Launch App
             <ChevronRight className="w-5 h-5 ml-2" />
@@ -175,21 +174,21 @@ export const Hero: React.FC = () => {
             animate={showAuth ? "authActive" : "visible"}
             whileHover={{
               scale: 1.05,
-              boxShadow: "0 0 25px rgba(20, 184, 166, 0.4)",
+              boxShadow: "0 0 25px rgba(255, 0, 55, 0.4)",
             }}
             className="absolute -left-[20%] sm:-left-[5%] md:left-[2%] lg:left-[5%] top-[60%] sm:top-[70%] md:top-[30%] w-60 md:w-72 h-36 md:h-44 glass-panel rounded-2xl p-4 md:p-6 pointer-events-auto border-t-white/40 flex flex-col justify-between origin-bottom-left z-0"
           >
             <div>
-              <p className="text-xs text-slate-400 uppercase tracking-widest font-semibold mb-1">
+              <p className="text-xs text-muted uppercase tracking-widest font-semibold mb-1">
                 Total Balance
               </p>
-              <h3 className="text-3xl font-bold text-white">$128,450.00</h3>
+              <h3 className="text-3xl font-bold text-bright">$128,450.00</h3>
             </div>
             <div className="flex justify-between items-end">
-              <div className="w-10 h-10 rounded-full bg-teal-500/20 flex items-center justify-center border border-teal-500/30">
-                <Activity className="w-5 h-5 text-teal-400" />
+              <div className="w-10 h-10 rounded-full bg-accent/20 flex items-center justify-center border border-accent/30">
+                <Activity className="w-5 h-5 text-accent" />
               </div>
-              <span className="text-teal-400 text-sm font-semibold flex items-center gap-1">
+              <span className="text-accent text-sm font-semibold flex items-center gap-1">
                 +2.4% <Zap className="w-3 h-3" />
               </span>
             </div>
@@ -203,9 +202,9 @@ export const Hero: React.FC = () => {
             animate={showAuth ? "authActive" : "visible"}
             whileHover={{
               scale: 1.1,
-              boxShadow: "0 0 25px rgba(139, 92, 246, 0.5)",
+              boxShadow: "0 0 25px rgba(255, 255, 255, 0.5)",
             }}
-            className="absolute right-[0%] md:right-[5%] lg:right-[10%] top-[5%] md:top-[15%] w-12 h-12 md:w-16 md:h-16 rounded-full glass-panel flex items-center justify-center pointer-events-auto text-violet-400 z-0"
+            className="absolute right-[0%] md:right-[5%] lg:right-[10%] top-[5%] md:top-[15%] w-12 h-12 md:w-16 md:h-16 rounded-full glass-panel flex items-center justify-center pointer-events-auto text-bright z-0"
           >
             <PieChart className="w-5 h-5 md:w-8 md:h-8" />
           </motion.div>
@@ -218,9 +217,9 @@ export const Hero: React.FC = () => {
             animate={showAuth ? "authActive" : "visible"}
             whileHover={{
               scale: 1.1,
-              boxShadow: "0 0 25px rgba(20, 184, 166, 0.5)",
+              boxShadow: "0 0 25px rgba(255, 0, 55, 0.5)",
             }}
-            className="absolute left-[5%] md:left-[10%] lg:left-[15%] bottom-[5%] md:bottom-[15%] w-14 h-14 md:w-20 md:h-20 rounded-full glass-panel flex items-center justify-center pointer-events-auto text-teal-400 z-0"
+            className="absolute left-[5%] md:left-[10%] lg:left-[15%] bottom-[5%] md:bottom-[15%] w-14 h-14 md:w-20 md:h-20 rounded-full glass-panel flex items-center justify-center pointer-events-auto text-accent z-0"
           >
             <Wallet className="w-5 h-5 md:w-10 md:h-10" />
           </motion.div>
@@ -237,12 +236,12 @@ export const Hero: React.FC = () => {
             }}
             className="absolute -right-[20%] sm:-right-[5%] md:right-[5%] lg:right-[8%] bottom-[10%] md:bottom-[20%] w-56 md:w-64 glass-panel rounded-xl p-3 md:p-4 pointer-events-auto flex items-center gap-3 md:gap-4 origin-bottom-right z-0"
           >
-            <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-slate-800/80 flex items-center justify-center shrink-0 shadow-inner border border-white/5">
-              <Cloud className="w-6 h-6 text-sky-400" />
+            <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-bg-card flex items-center justify-center shrink-0 shadow-inner border border-bg-border">
+              <Cloud className="w-6 h-6 text-bright" />
             </div>
             <div>
-              <h4 className="text-white text-sm font-bold">Cloud Sync</h4>
-              <p className="text-slate-400 text-xs">Real-time Firebase state</p>
+              <h4 className="text-bright text-sm font-bold">Cloud Sync</h4>
+              <p className="text-muted text-xs">Real-time Firebase state</p>
             </div>
           </motion.div>
         </div>

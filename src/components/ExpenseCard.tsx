@@ -93,28 +93,28 @@ const CategoryIcon = ({
 }) => {
   if (customIcon && CUSTOM_ICONS_MAP[customIcon]) {
     const Icon = CUSTOM_ICONS_MAP[customIcon];
-    return <Icon className="w-5 h-5 text-teal-400" />;
+    return <Icon className="w-5 h-5 text-accent" />;
   }
 
   switch (category.toLowerCase()) {
     case "food":
-      return <Coffee className="w-5 h-5 text-orange-400" />;
+      return <Coffee className="w-5 h-5 text-accent" />;
     case "shopping":
-      return <ShoppingBag className="w-5 h-5 text-purple-400" />;
+      return <ShoppingBag className="w-5 h-5 text-muted" />;
     case "housing":
-      return <Home className="w-5 h-5 text-blue-400" />;
+      return <Home className="w-5 h-5 text-muted" />;
     case "utilities":
-      return <Zap className="w-5 h-5 text-yellow-400" />;
+      return <Zap className="w-5 h-5 text-bright" />;
     case "salary":
-      return <Briefcase className="w-5 h-5 text-teal-400" />;
+      return <Briefcase className="w-5 h-5 text-accent" />;
     case "freelance":
-      return <Globe className="w-5 h-5 text-cyan-400" />;
+      return <Globe className="w-5 h-5 text-muted" />;
     case "investment":
-      return <TrendingUp className="w-5 h-5 text-emerald-400" />;
+      return <TrendingUp className="w-5 h-5 text-accent" />;
     case "gift":
-      return <Gift className="w-5 h-5 text-pink-400" />;
+      return <Gift className="w-5 h-5 text-accent" />;
     default:
-      return <MoreHorizontal className="w-5 h-5 text-slate-400" />;
+      return <MoreHorizontal className="w-5 h-5 text-muted" aria-hidden="true" />;
   }
 };
 
@@ -172,13 +172,14 @@ const ExpenseCardComponent: React.FC<ExpenseCardProps> = ({
             e.stopPropagation();
             onEdit?.(transaction, e.currentTarget);
           }}
-          className={`w-7 h-7 sm:w-8 sm:h-8 flex shrink-0 items-center justify-center rounded-full bg-white/8 border border-white/10 text-slate-400 hover:text-teal-400 active:text-teal-400 hover:bg-teal-500/15 active:bg-teal-500/15 transition-all duration-300 ${
+          aria-label={`Edit ${transaction.title}`}
+          className={`w-7 h-7 sm:w-8 sm:h-8 flex shrink-0 items-center justify-center rounded-full bg-bg-card/50 border border-bg-border text-muted hover:text-accent active:text-accent hover:bg-accent/15 active:bg-accent/15 transition-all duration-300 ${
             (isExpanded || isHovered) && !showDeleteConfirm
               ? "opacity-100 pointer-events-auto scale-100"
               : "opacity-0 pointer-events-none scale-75"
           }`}
         >
-          <Edit2 className="w-3.5 h-3.5" />
+          <Edit2 className="w-3.5 h-3.5" aria-hidden="true" />
         </button>
 
         {/* Trash button ↔ Confirm pill */}
@@ -204,7 +205,7 @@ const ExpenseCardComponent: React.FC<ExpenseCardProps> = ({
                 e.stopPropagation();
                 setShowDeleteConfirm(false);
               }}
-              className="p-1 px-2 rounded-full hover:bg-white/10 text-slate-300 text-xs transition-colors"
+              className="p-1 px-2 rounded-full hover:bg-bg-card/50 text-muted text-xs transition-colors"
             >
               No
             </button>
@@ -216,13 +217,14 @@ const ExpenseCardComponent: React.FC<ExpenseCardProps> = ({
               e.stopPropagation();
               setShowDeleteConfirm(true);
             }}
-            className={`w-7 h-7 sm:w-8 sm:h-8 flex shrink-0 items-center justify-center rounded-full bg-white/8 border border-white/10 text-slate-400 hover:text-rose-400 active:text-rose-400 hover:bg-rose-500/15 active:bg-rose-500/15 transition-all duration-300 ${
+            aria-label={`Delete ${transaction.title}`}
+            className={`w-7 h-7 sm:w-8 sm:h-8 flex shrink-0 items-center justify-center rounded-full bg-bg-card/50 border border-bg-border text-muted hover:text-rose-400 active:text-rose-400 hover:bg-rose-500/15 active:bg-rose-500/15 transition-all duration-300 ${
               isExpanded || isHovered
                 ? "opacity-100 pointer-events-auto scale-100"
                 : "opacity-0 pointer-events-none scale-75"
             }`}
           >
-            <Trash2 className="w-3.5 h-3.5" />
+            <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
           </button>
         )}
       </div>
@@ -233,15 +235,16 @@ const ExpenseCardComponent: React.FC<ExpenseCardProps> = ({
     <motion.div
       layoutId={isMobileChrome ? undefined : `amounts-${transaction.id}`}
       className="flex flex-col items-end gap-0.5 shrink-0"
+      aria-label={`${isIncome ? "Income" : "Expense"} amount: ${currencySymbol(transaction.currency)}${Math.abs(transaction.amount).toFixed(2)}`}
     >
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-1" aria-hidden="true">
         {isIncome ? (
           <ArrowUpRight className="w-4 h-4 text-emerald-400" />
         ) : (
           <ArrowDownRight className="w-4 h-4 text-rose-400" />
         )}
         <span
-          className={`font-semibold tracking-wide ${isIncome ? "text-emerald-400" : "text-slate-200"} ${isExpanded ? "text-xl sm:text-2xl" : "text-lg"}`}
+          className={`font-semibold tracking-wide ${isIncome ? "text-emerald-400" : "text-bright"} ${isExpanded ? "text-xl sm:text-2xl" : "text-lg"}`}
         >
           {currencySymbol(transaction.currency)} {isIncome ? "+" : "-"}
           {Math.abs(transaction.amount).toFixed(2)}
@@ -252,9 +255,9 @@ const ExpenseCardComponent: React.FC<ExpenseCardProps> = ({
       {convertToDefault &&
         defaultCurrency &&
         transaction.currency !== defaultCurrency && (
-          <div className="flex items-center gap-1 text-xs sm:text-sm text-slate-500">
-            <span>→</span>
-            <span className={isIncome ? "text-emerald-600" : "text-slate-500"}>
+          <div className="flex items-center gap-1 text-xs sm:text-sm text-muted" aria-label={`Converted to ${defaultCurrency}: ${currencySymbol(defaultCurrency)}${Math.abs(convertToDefault(transaction.amount, transaction.currency)).toFixed(2)}`}>
+            <span aria-hidden="true">→</span>
+            <span className={isIncome ? "text-emerald-600" : "text-muted"}>
               {currencySymbol(defaultCurrency)} {isIncome ? "+" : "-"}
               {Math.abs(
                 convertToDefault(transaction.amount, transaction.currency),
@@ -267,9 +270,10 @@ const ExpenseCardComponent: React.FC<ExpenseCardProps> = ({
 
   return (
     // Outer: layout wrapper only
-    <motion.div
+    <motion.article
       layout={!isMobileChrome}
       id={`expense-card-${transaction.id}`}
+      aria-expanded={isExpanded}
       className={`relative transform-gpu will-change-transform ${isHovered || isExpanded ? "z-30" : "z-10"} ${isEditing ? "pointer-events-none" : ""}`}
     >
       <div
@@ -300,7 +304,7 @@ const ExpenseCardComponent: React.FC<ExpenseCardProps> = ({
             transition={
               isMobileChrome ? { duration: 0.18, ease: "easeOut" } : undefined
             }
-            className={`glass-panel border group-hover:bg-white/15 transition-all duration-300 relative transform-gpu will-change-transform ${isExpanded ? "bg-white/10 border-white/20 shadow-xl shadow-black/20" : "border-white/5 group-hover:border-white/20"}`}
+            className={`glass-panel border group-hover:bg-bg-card/40 transition-all duration-300 relative transform-gpu will-change-transform ${isExpanded ? "bg-bg-card/40 border-accent/20 shadow-xl shadow-black/10" : "border-bg-border group-hover:border-accent/20"}`}
           >
             {/* Inner Content that fades out/in when editing */}
             <motion.div
@@ -319,7 +323,7 @@ const ExpenseCardComponent: React.FC<ExpenseCardProps> = ({
                         layoutId={
                           isMobileChrome ? undefined : `icon-${transaction.id}`
                         }
-                        className="p-3 bg-white/5 rounded-2xl border border-white/10 backdrop-blur-md shrink-0"
+                        className="p-3 bg-bg-card/50 rounded-2xl border border-bg-border backdrop-blur-md shrink-0"
                       >
                         <CategoryIcon
                           category={transaction.category}
@@ -331,7 +335,7 @@ const ExpenseCardComponent: React.FC<ExpenseCardProps> = ({
                           layoutId={
                             isMobileChrome ? undefined : `title-${transaction.id}`
                           }
-                          className="text-slate-100 font-semibold text-lg sm:text-xl break-words leading-tight"
+                          className="text-bright font-semibold text-lg sm:text-xl break-words leading-tight"
                         >
                           {transaction.title}
                         </motion.h3>
@@ -345,8 +349,8 @@ const ExpenseCardComponent: React.FC<ExpenseCardProps> = ({
                           animate={{ opacity: 1 }}
                           className="mt-1.5 flex items-center gap-1.5"
                         >
-                          <span className="w-1.5 h-1.5 rounded-full bg-teal-400"></span>
-                          <span className="text-teal-400 text-xs font-bold uppercase tracking-widest">
+                          <span className="w-1.5 h-1.5 rounded-full bg-accent"></span>
+                          <span className="text-accent text-xs font-bold uppercase tracking-widest">
                             {transaction.category}
                           </span>
                         </motion.div>
@@ -355,12 +359,12 @@ const ExpenseCardComponent: React.FC<ExpenseCardProps> = ({
                     <div className="shrink-0 mt-1">{renderAmounts()}</div>
                   </div>
 
-                  <div className="flex justify-between items-end w-full mt-1 pt-3 sm:pt-4 border-t border-white/5">
+                  <div className="flex justify-between items-end w-full mt-1 pt-3 sm:pt-4 border-t border-bg-border">
                     <motion.p
                       layoutId={
                         isMobileChrome ? undefined : `time-${transaction.id}`
                       }
-                      className="text-slate-400 text-sm font-medium"
+                      className="text-muted text-sm font-medium"
                     >
                       {transaction.date.toLocaleString(undefined, {
                         weekday: "short",
@@ -381,7 +385,7 @@ const ExpenseCardComponent: React.FC<ExpenseCardProps> = ({
                       layoutId={
                         isMobileChrome ? undefined : `icon-${transaction.id}`
                       }
-                      className="p-2.5 sm:p-3 bg-white/5 rounded-xl sm:rounded-2xl border border-white/10 backdrop-blur-md shrink-0"
+                      className="p-2.5 sm:p-3 bg-bg-card/50 rounded-xl sm:rounded-2xl border border-bg-border backdrop-blur-md shrink-0"
                     >
                       <CategoryIcon
                         category={transaction.category}
@@ -393,7 +397,7 @@ const ExpenseCardComponent: React.FC<ExpenseCardProps> = ({
                         layoutId={
                           isMobileChrome ? undefined : `title-${transaction.id}`
                         }
-                        className="text-slate-200 font-medium text-base sm:text-lg overflow-hidden text-ellipsis whitespace-nowrap"
+                        className="text-bright font-medium text-base sm:text-lg overflow-hidden text-ellipsis whitespace-nowrap"
                       >
                         {transaction.title}
                       </motion.h3>
@@ -401,7 +405,7 @@ const ExpenseCardComponent: React.FC<ExpenseCardProps> = ({
                         layoutId={
                           isMobileChrome ? undefined : `time-${transaction.id}`
                         }
-                        className="text-slate-400 text-xs sm:text-sm overflow-hidden text-ellipsis whitespace-nowrap"
+                        className="text-muted text-xs sm:text-sm overflow-hidden text-ellipsis whitespace-nowrap"
                       >
                         {transaction.date.toLocaleTimeString(undefined, {
                           hour: "2-digit",
@@ -422,7 +426,7 @@ const ExpenseCardComponent: React.FC<ExpenseCardProps> = ({
           </motion.div>
         </motion.div>
       </div>
-    </motion.div>
+    </motion.article>
   );
 };
 

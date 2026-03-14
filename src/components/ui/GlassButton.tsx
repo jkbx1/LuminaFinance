@@ -17,10 +17,10 @@ export const GlassButton: React.FC<GlassButtonProps> = ({
 
   const variantClasses = {
     primary:
-      "text-teal-300 hover:text-teal-200 border-teal-500/30 hover:bg-teal-500/20",
-    secondary: "text-slate-200 hover:text-white border-white/20",
+      "text-accent hover:text-accent-hover border-accent/30 hover:bg-accent/20",
+    secondary: "text-bright hover:text-accent border-bg-border bg-bg-card/30 hover:bg-bg-card/50",
     danger:
-      "text-rose-400 hover:text-rose-300 border-rose-500/30 hover:bg-rose-500/20",
+      "text-[#FF0037] hover:text-[#CC002C] border-accent/30 hover:bg-accent/20",
   };
 
   return (

@@ -52,9 +52,9 @@ const CustomTooltip = ({
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.2, ease: "easeOut" }}
-          className="p-3 rounded-xl border border-white/20 shadow-2xl bg-[#0f172a]/95"
+          className="p-3 rounded-xl border border-glass-border shadow-2xl bg-bg-card/95 backdrop-blur-md"
         >
-          <p className="text-slate-200 text-sm font-medium mb-1">
+          <p className="text-bright text-sm font-medium mb-1">
             {payload[0].name}
           </p>
           <p
@@ -102,7 +102,7 @@ export const GlassyDonutChart: React.FC<GlassyDonutChartProps> = ({
             outerRadius={115}
             paddingAngle={6}
             dataKey="value"
-            stroke="rgba(255,255,255,0.1)"
+            stroke="var(--glass-border)"
             strokeWidth={2}
           >
             {data.map((entry, index) => (
@@ -123,10 +123,10 @@ export const GlassyDonutChart: React.FC<GlassyDonutChartProps> = ({
 
       {/* Center Text */}
       <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-        <span className="text-slate-400 text-sm tracking-wider uppercase">
+        <span className="text-muted text-sm tracking-wider uppercase">
           {totalText || "Total"}
         </span>
-        <span className="text-3xl font-bold tracking-tight text-white mt-1">
+        <span className="text-3xl font-bold tracking-tight text-bright mt-1">
           {currencySymbol}{" "}
           {total.toLocaleString(undefined, {
             minimumFractionDigits: 2,

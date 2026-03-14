@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
 
-import { Plus, LogOut } from "lucide-react";
+import { Plus } from "lucide-react";
 import {
   collection,
   query,
@@ -27,8 +27,8 @@ import {
 } from "./ExpenseCard";
 import { GlassyDonutChart } from "./GlassyDonutChart";
 import { AddExpenseModal } from "./AddExpenseModal";
-import { GlassButton } from "./ui/GlassButton";
 import { MonthlyView } from "./MonthlyView";
+import { FloatingNavbar } from "./ui/FloatingNavbar";
 
 export const Dashboard: React.FC = () => {
   const { user, logout, isGuest, signInWithGoogle, clearGuest } = useAuth();
@@ -462,11 +462,11 @@ export const Dashboard: React.FC = () => {
   );
 
   const colorMap: Record<string, string> = {
-    food: "#fb923c", // orange-400
-    shopping: "#c084fc", // purple-400
-    housing: "#60a5fa", // blue-400
-    utilities: "#facc15", // yellow-400
-    other: "#94a3b8", // slate-400
+    food: "#FF0037", // accent
+    shopping: "#808080", // gray
+    housing: "#333333", // dark gray
+    utilities: "#F2F2F2", // off-white
+    other: "#1A1A1A", // card bg slate-400
   };
 
   const chartData = Object.entries(chartDataMap).map(([name, value]) => ({
@@ -478,174 +478,29 @@ export const Dashboard: React.FC = () => {
   // Fallback empty chart data
   const isEmptyChart = chartData.length === 0;
   if (isEmptyChart) {
-    chartData.push({ name: "No Expenses", value: 0.1, color: "#334155" });
+    chartData.push({ name: "No Expenses", value: 0.1, color: "#1A1A1A" });
   }
 
   return (
     <LayoutGroup>
-      <motion.div
+      <motion.main
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-        className="min-h-screen pt-8 pb-20 px-4 md:px-8 relative z-0 selection:bg-teal-500/30"
+        className="min-h-screen pt-32 pb-32 px-4 md:px-8 relative z-0 selection:bg-accent/30"
       >
         <Background3D />
+        
+        <FloatingNavbar 
+          isGuest={isGuest}
+          isSyncing={isSyncing}
+          onLogout={logout}
+          onSync={handleLoginAndSync}
+          welcomeName={user?.displayName?.split(" ")[0] || "User"}
+          isBlurred={isModalOpen || !!editingTransaction}
+        />
 
         <div className="max-w-7xl mx-auto">
-          <header className="flex flex-col md:flex-row md:items-center justify-between gap-5 mb-8">
-            {/* Top Row on Mobile: Logo and Logout */}
-            <div className="flex items-center justify-between w-full md:w-auto md:gap-8">
-              <div className="flex items-center gap-2 md:gap-3 shrink-0 min-w-0">
-                <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-teal-500/10 flex items-center justify-center border border-teal-500/20 shadow-[0_0_15px_rgba(20,184,166,0.15)] shrink-0 overflow-hidden p-1.5">
-                  <img
-                    src="/icon.svg"
-                    alt="Lumina Icon"
-                    className="w-full h-full object-contain"
-                  />
-                </div>
-                <div className="min-w-0">
-                  <h1 className="text-lg md:text-xl font-bold text-white tracking-tight truncate">
-                    Lumina Finance
-                  </h1>
-                  <p className="text-xs md:text-sm text-slate-400 font-medium truncate">
-                    Welcome back, {user?.displayName?.split(" ")[0] || "User"}
-                  </p>
-                </div>
-              </div>
-
-              {/* Mobile Controls */}
-              <div className="flex items-center gap-2 md:hidden shrink-0">
-                {isGuest && (
-                  <GlassButton
-                    variant="primary"
-                    onClick={handleLoginAndSync}
-                    disabled={isSyncing}
-                    className="p-2.5 rounded-full flex shrink-0"
-                    aria-label="Login & Sync"
-                  >
-                    {isSyncing ? (
-                      <div className="w-4 h-4 border-2 border-slate-900 border-t-transparent rounded-full animate-spin" />
-                    ) : (
-                      <span className="text-xs font-semibold px-2">Sync</span>
-                    )}
-                  </GlassButton>
-                )}
-                <GlassButton
-                  variant="secondary"
-                  onClick={logout}
-                  className="p-2.5 rounded-full flex shrink-0"
-                  aria-label="Logout"
-                >
-                  <LogOut className="w-4 h-4" />
-                </GlassButton>
-              </div>
-            </div>
-
-            {/* Controls Row: Toggles and Desktop Logout */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between w-full md:w-auto gap-4 mt-4 md:mt-0">
-              <div className="flex flex-col lg:flex-row items-center justify-center lg:justify-start gap-3 w-full md:w-auto">
-                {/* View Toggle */}
-                <div className="hidden sm:flex bg-white/5 p-1 rounded-full border border-white/10 backdrop-blur-sm shrink-0 w-full lg:w-auto justify-center">
-                  <button
-                    onClick={() => setView("overview")}
-                    className={`relative flex-1 sm:flex-none px-3 sm:px-4 py-1.5 text-xs sm:text-sm font-medium rounded-full z-10 transition-colors ${
-                      view === "overview"
-                        ? "text-teal-950"
-                        : "text-slate-400 hover:text-slate-200"
-                    }`}
-                  >
-                    {view === "overview" && (
-                      <motion.div
-                        layoutId="view-highlight"
-                        className="absolute inset-0 bg-teal-400 rounded-full z-[-1]"
-                        transition={{
-                          type: "spring",
-                          stiffness: 400,
-                          damping: 30,
-                        }}
-                      />
-                    )}
-                    Overview
-                  </button>
-                  <button
-                    onClick={() => setView("monthly")}
-                    className={`relative flex-1 sm:flex-none px-3 sm:px-4 py-1.5 text-xs sm:text-sm font-medium rounded-full z-10 transition-colors ${
-                      view === "monthly"
-                        ? "text-teal-950"
-                        : "text-slate-400 hover:text-slate-200"
-                    }`}
-                  >
-                    {view === "monthly" && (
-                      <motion.div
-                        layoutId="view-highlight"
-                        className="absolute inset-0 bg-teal-400 rounded-full z-[-1]"
-                        transition={{
-                          type: "spring",
-                          stiffness: 400,
-                          damping: 30,
-                        }}
-                      />
-                    )}
-                    Monthly
-                  </button>
-                </div>
-
-                {/* Default display currency selector */}
-                <div className="flex flex-wrap items-center justify-between gap-1 sm:gap-2 glass-panel p-1.5 sm:p-2 rounded-2xl w-full lg:w-auto">
-                  {Object.keys(CURRENCY_SYMBOL).map((code) => (
-                    <button
-                      key={code}
-                      onClick={() => handleDefaultCurrencyChange(code)}
-                      className={`relative px-2 sm:px-3 py-1.5 flex-1 text-center rounded-full text-[10px] sm:text-xs font-semibold transition-colors z-10 ${
-                        defaultCurrency === code
-                          ? "text-white"
-                          : "text-slate-400 hover:text-slate-200"
-                      }`}
-                    >
-                      {defaultCurrency === code && (
-                        <motion.div
-                          layoutId="default-currency-pill"
-                          className="absolute inset-0 bg-teal-500/30 border border-teal-400/40 rounded-full z-[-1]"
-                          transition={{
-                            type: "spring",
-                            stiffness: 400,
-                            damping: 30,
-                          }}
-                        />
-                      )}
-                      {currencySymbol(code)}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Desktop Auth Controls */}
-              <div className="hidden md:flex items-center gap-3 shrink-0">
-                {isGuest && (
-                  <GlassButton
-                    variant="primary"
-                    onClick={handleLoginAndSync}
-                    disabled={isSyncing}
-                    className="px-4 py-2 rounded-full flex shrink-0 transition-all font-semibold"
-                  >
-                    {isSyncing ? (
-                      <div className="w-4 h-4 border-2 border-slate-900 border-t-transparent rounded-full animate-spin mr-2" />
-                    ) : (
-                      <span className="mr-0">Login & Sync</span>
-                    )}
-                  </GlassButton>
-                )}
-                <GlassButton
-                  variant="secondary"
-                  onClick={logout}
-                  className="px-4 py-2 rounded-full flex shrink-0"
-                >
-                  <LogOut className="w-4 h-4 mr-2" />
-                  <span>Logout</span>
-                </GlassButton>
-              </div>
-            </div>
-          </header>
 
           <AnimatePresence mode="wait">
             {view === "overview" ? (
@@ -659,10 +514,35 @@ export const Dashboard: React.FC = () => {
               >
                 {/* Left Column: Summary & Chart */}
                 <div className="lg:col-span-1 xl:col-span-1 space-y-6 relative z-20">
+                  {/* Currency Selector above Balance */}
+                  <div className="flex gap-1 glass-panel p-1 rounded-full mb-2" role="group" aria-label="Currency selection">
+                    {Object.keys(CURRENCY_SYMBOL).map((code) => (
+                      <button
+                        key={code}
+                        onClick={() => handleDefaultCurrencyChange(code)}
+                        aria-label={`Switch to ${code}`}
+                        aria-pressed={defaultCurrency === code}
+                        className={`relative flex-1 px-2 py-1.5 text-[10px] font-bold rounded-full transition-colors z-10 ${
+                          defaultCurrency === code
+                            ? "text-white"
+                            : "text-muted hover:text-bright"
+                        }`}
+                      >
+                        {defaultCurrency === code && (
+                          <motion.div
+                            layoutId="currency-selector-pill"
+                            className="absolute inset-0 bg-accent/20 border border-accent/20 rounded-full z-[-1]"
+                            transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                          />
+                        )}
+                        {currencySymbol(code)}
+                      </button>
+                    ))}
+                  </div>
                   <GlassCard className="relative overflow-hidden">
-                    <div className="absolute -top-10 -right-10 w-40 h-40 bg-teal-500/20 blur-[50px] rounded-full pointer-events-none" />
+                    <div className="absolute -top-10 -right-10 w-40 h-40 bg-accent/10 blur-[50px] rounded-full pointer-events-none" />
                     <div className="flex items-center justify-between mb-1 relative z-10">
-                      <h2 className="text-slate-400 text-sm font-medium tracking-wide uppercase">
+                      <h2 className="text-muted text-sm font-medium tracking-wide uppercase">
                         Total Balance
                       </h2>
                       <select
@@ -670,41 +550,42 @@ export const Dashboard: React.FC = () => {
                         onChange={(e) =>
                           setBalanceTimeframe(e.target.value as any)
                         }
-                        className="bg-white/5 border border-white/10 text-slate-300 font-medium text-xs rounded-full px-3 py-1 outline-none focus:ring-1 focus:ring-teal-500 appearance-none cursor-pointer hover:bg-white/10 transition-colors"
+                        aria-label="Filter balance timeframe"
+                        className="bg-bg-card border border-bg-border text-bright font-medium text-xs rounded-full px-3 py-1 outline-none focus:ring-1 focus:ring-accent appearance-none cursor-pointer hover:bg-bg-card/80 transition-colors"
                       >
                         <option
                           value="daily"
-                          className="bg-[#0f172a] text-slate-300"
+                          className="bg-bg-card text-bright"
                         >
                           Daily
                         </option>
                         <option
                           value="weekly"
-                          className="bg-[#0f172a] text-slate-300"
+                          className="bg-bg-card text-bright"
                         >
                           Weekly
                         </option>
                         <option
                           value="monthly"
-                          className="bg-[#0f172a] text-slate-300"
+                          className="bg-bg-card text-bright"
                         >
                           Monthly
                         </option>
                         <option
                           value="yearly"
-                          className="bg-[#0f172a] text-slate-300"
+                          className="bg-bg-card text-bright"
                         >
                           Yearly
                         </option>
                         <option
                           value="all"
-                          className="bg-[#0f172a] text-slate-300"
+                          className="bg-bg-card text-bright"
                         >
                           All Time
                         </option>
                       </select>
                     </div>
-                    <div className="text-4xl font-bold text-white mb-6 tracking-tight overflow-hidden">
+                    <div className="text-4xl font-bold text-bright mb-6 tracking-tight overflow-hidden">
                       <AnimatePresence mode="wait">
                         <motion.span
                           key={`balance-all`}
@@ -726,7 +607,7 @@ export const Dashboard: React.FC = () => {
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
-                      <div className="bg-white/5 p-3 rounded-xl border border-white/5 overflow-hidden">
+                      <div className="bg-bg-card/50 p-3 rounded-xl border border-bg-border overflow-hidden">
                         <div className="text-emerald-400 text-xs font-semibold mb-1 tracking-wider uppercase flex items-center gap-1">
                           Income
                         </div>
@@ -738,7 +619,7 @@ export const Dashboard: React.FC = () => {
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: -8 }}
                             transition={{ duration: 0.2, ease: "easeOut" }}
-                            className="text-lg font-bold text-slate-200"
+                            className="text-lg font-bold text-bright"
                           >
                             {currencySymbol(defaultCurrency)}{" "}
                             {income.toLocaleString(undefined, {
@@ -748,7 +629,7 @@ export const Dashboard: React.FC = () => {
                           </motion.div>
                         </AnimatePresence>
                       </div>
-                      <div className="bg-white/5 p-3 rounded-xl border border-white/5 overflow-hidden">
+                      <div className="bg-bg-card/50 p-3 rounded-xl border border-bg-border overflow-hidden">
                         <div className="text-rose-400 text-xs font-semibold mb-1 tracking-wider uppercase flex items-center gap-1">
                           Expense
                         </div>
@@ -760,7 +641,7 @@ export const Dashboard: React.FC = () => {
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: -8 }}
                             transition={{ duration: 0.2, ease: "easeOut" }}
-                            className="text-lg font-bold text-slate-200"
+                            className="text-lg font-bold text-bright"
                           >
                             {currencySymbol(defaultCurrency)}{" "}
                             {Math.abs(expense).toLocaleString(undefined, {
@@ -775,7 +656,7 @@ export const Dashboard: React.FC = () => {
 
                   <GlassCard>
                     <div className="flex items-center justify-between mb-6">
-                      <h3 className="text-lg font-bold text-white">
+                      <h3 className="text-lg font-bold text-bright">
                         Spending Overview
                       </h3>
                       <select
@@ -783,35 +664,35 @@ export const Dashboard: React.FC = () => {
                         onChange={(e) =>
                           setChartTimeframe(e.target.value as any)
                         }
-                        className="bg-white/5 border border-white/10 text-slate-300 font-medium text-xs rounded-full px-3 py-1 outline-none focus:ring-1 focus:ring-teal-500 appearance-none cursor-pointer hover:bg-white/10 transition-colors"
+                        className="bg-bg-card border border-bg-border text-bright font-medium text-xs rounded-full px-3 py-1 outline-none focus:ring-1 focus:ring-accent appearance-none cursor-pointer hover:bg-bg-card/80 transition-colors"
                       >
                         <option
                           value="daily"
-                          className="bg-[#0f172a] text-slate-300"
+                          className="bg-bg-card text-bright"
                         >
                           Daily
                         </option>
                         <option
                           value="weekly"
-                          className="bg-[#0f172a] text-slate-300"
+                          className="bg-bg-card text-bright"
                         >
                           Weekly
                         </option>
                         <option
                           value="monthly"
-                          className="bg-[#0f172a] text-slate-300"
+                          className="bg-bg-card text-bright"
                         >
                           Monthly
                         </option>
                         <option
                           value="yearly"
-                          className="bg-[#0f172a] text-slate-300"
+                          className="bg-bg-card text-bright"
                         >
                           Yearly
                         </option>
                         <option
                           value="all"
-                          className="bg-[#0f172a] text-slate-300"
+                          className="bg-bg-card text-bright"
                         >
                           All Time
                         </option>
@@ -829,9 +710,9 @@ export const Dashboard: React.FC = () => {
                 {/* Right Column: Transactions List */}
                 <div className="lg:col-span-2 xl:col-span-3">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-                    <h3 className="text-2xl font-bold text-white tracking-tight">
+                    <h3 className="text-2xl font-bold text-bright tracking-tight">
                       Recent Transactions{" "}
-                      <span className="text-sm font-normal text-slate-400 ml-2">
+                      <span className="text-sm font-normal text-muted ml-2">
                         (Last 3 days)
                       </span>
                     </h3>
@@ -839,13 +720,13 @@ export const Dashboard: React.FC = () => {
 
                   <div className="space-y-6 relative z-0">
                     {transactions.length === 0 ? (
-                      <div className="glass-panel p-10 text-center rounded-2xl border border-white/10 border-dashed">
-                        <p className="text-slate-400 mb-4">
+                      <div className="glass-panel p-10 text-center rounded-2xl border border-bg-border border-dashed">
+                        <p className="text-muted mb-4">
                           No transactions yet.
                         </p>
                         <button
                           onClick={openAddModal}
-                          className="text-teal-400 hover:text-teal-300 font-medium transition-colors"
+                          className="text-accent hover:text-accent-hover font-medium transition-colors"
                         >
                           Add your first expense
                         </button>
@@ -863,8 +744,8 @@ export const Dashboard: React.FC = () => {
 
                         if (recentTxs.length === 0) {
                           return (
-                            <div className="glass-panel p-10 text-center rounded-2xl border border-white/10 border-dashed">
-                              <p className="text-slate-400">
+                            <div className="glass-panel p-10 text-center rounded-2xl border border-bg-border border-dashed">
+                              <p className="text-muted">
                                 No transactions in the last 3 days.
                               </p>
                             </div>
@@ -893,10 +774,10 @@ export const Dashboard: React.FC = () => {
                         return Object.entries(grouped).map(([dateStr, txs]) => (
                           <div key={dateStr} className="space-y-4">
                             <div className="flex items-center gap-4">
-                              <h4 className="text-sm font-bold text-slate-300 tracking-wider uppercase">
+                              <h4 className="text-sm font-bold text-muted tracking-wider uppercase">
                                 {dateStr}
                               </h4>
-                              <div className="h-px flex-1 bg-gradient-to-r from-white/10 to-transparent" />
+                              <div className="h-px flex-1 bg-gradient-to-r from-bg-border to-transparent" />
                             </div>
                             <div className="space-y-4">
                               {txs.map((tx) => (
@@ -946,73 +827,51 @@ export const Dashboard: React.FC = () => {
           </AnimatePresence>
         </div>
 
-        {/* Mobile View Navigation (Bottom Bar) */}
-        <div className="fixed bottom-0 left-0 right-0 z-40 sm:hidden pb-safe">
-          <div className="bg-slate-900/80 backdrop-blur-xl border-t border-white/10 p-3 px-4 relative w-full h-[76px] flex items-center justify-between gap-3 shadow-[0_-10px_40px_rgba(0,0,0,0.3)]">
-            <div className="flex gap-1 flex-1 bg-white/5 p-1 rounded-full border border-white/10 backdrop-blur-md">
+        {/* Bottom Navigation (Toggle & Add Button) */}
+        {!isModalOpen && !editingTransaction && (
+          <nav className="fixed bottom-8 left-1/2 -translate-x-1/2 z-40 pointer-events-none flex items-center gap-3 w-full max-w-sm px-6">
+            <div className="glass-panel p-1.5 rounded-full flex flex-1 pointer-events-auto border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] backdrop-blur-xl">
               <button
                 onClick={() => setView("overview")}
-                className={`flex-1 flex flex-col items-center justify-center py-2 px-3 rounded-full text-[10px] font-bold tracking-wider uppercase transition-colors relative z-10 ${
-                  view === "overview"
-                    ? "text-teal-950"
-                    : "text-slate-400 hover:text-slate-200"
+                className={`relative flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-full z-10 transition-all duration-300 ${
+                  view === "overview" ? "text-white" : "text-slate-400 hover:text-white"
                 }`}
+                aria-label="Show overview"
               >
                 {view === "overview" && (
                   <motion.div
-                    layoutId="view-highlight-mobile"
-                    className="absolute inset-0 bg-teal-400 rounded-full z-[-1]"
-                    transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                    layoutId="view-toggle-pill"
+                    className="absolute inset-0 bg-accent rounded-full z-[-1] shadow-[0_0_20px_rgba(255,0,55,0.4)]"
+                    transition={{ duration: 0.3, ease: "easeOut" }}
                   />
                 )}
                 Overview
               </button>
               <button
                 onClick={() => setView("monthly")}
-                className={`flex-1 flex flex-col items-center justify-center py-2 px-3 rounded-full text-[10px] font-bold tracking-wider uppercase transition-colors relative z-10 ${
-                  view === "monthly"
-                    ? "text-teal-950"
-                    : "text-slate-400 hover:text-slate-200"
+                className={`relative flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-full z-10 transition-all duration-300 ${
+                  view === "monthly" ? "text-white" : "text-slate-400 hover:text-white"
                 }`}
               >
                 {view === "monthly" && (
                   <motion.div
-                    layoutId="view-highlight-mobile"
-                    className="absolute inset-0 bg-teal-400 rounded-full z-[-1]"
-                    transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                    layoutId="view-toggle-pill"
+                    className="absolute inset-0 bg-accent rounded-full z-[-1] shadow-[0_0_20px_rgba(255,0,55,0.4)]"
+                    transition={{ duration: 0.3, ease: "easeOut" }}
                   />
                 )}
                 Monthly
               </button>
             </div>
-
-            {/* Add Button incorporated into Navbar */}
-            <div className="relative shrink-0 flex items-center justify-center">
-              <button
-                id="fab-add-button-mobile"
-                onClick={openAddModal}
-                className={`flex items-center justify-center gap-1.5 bg-teal-500 rounded-full h-11 px-5 text-slate-900 shadow-[0_0_20px_rgba(20,184,166,0.5)] transition-all active:scale-95 ${
-                  isModalOpen || editingTransaction
-                    ? "opacity-0 pointer-events-none scale-75"
-                    : "opacity-100 pointer-events-auto scale-100"
-                }`}
-              >
-                <Plus className="w-5 h-5 pointer-events-none" />
-                <span className="font-bold tracking-wide">Add</span>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Floating Action Button (Desktop Only) */}
-        {!isModalOpen && !editingTransaction && (
-          <button
-            id="fab-add-button"
-            onClick={openAddModal}
-            className="hidden sm:flex fixed bottom-8 right-8 w-16 h-16 bg-teal-500 rounded-full items-center justify-center text-slate-900 shadow-[0_0_30px_rgba(20,184,166,0.5)] z-50 transition-all hover:shadow-[0_0_40px_rgba(20,184,166,0.8)] hover:scale-105 active:scale-95 hover:rotate-90 animate-in fade-in zoom-in-50 duration-300"
-          >
-            <Plus className="w-8 h-8 pointer-events-none transition-transform" />
-          </button>
+            
+            <button
+              id="fab-add-button"
+              onClick={openAddModal}
+              className="w-14 h-14 bg-accent rounded-full flex items-center justify-center text-white shadow-[0_10px_30px_rgba(255,0,55,0.4)] pointer-events-auto transition-all hover:scale-110 active:scale-95 hover:rotate-90 shrink-0"
+            >
+              <Plus className="w-7 h-7 pointer-events-none" />
+            </button>
+          </nav>
         )}
 
         <AddExpenseModal
@@ -1023,7 +882,7 @@ export const Dashboard: React.FC = () => {
           onEdit={handleEditTransaction}
           defaultDate={selectedCalendarDate || new Date()}
         />
-      </motion.div>
+      </motion.main>
     </LayoutGroup>
   );
 };

@@ -191,7 +191,7 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={modalTransition}
-            className="fixed inset-0 z-40 bg-slate-950/60 backdrop-blur-md"
+            className="fixed inset-0 z-40 bg-black/60 backdrop-blur-md"
             onClick={onClose}
           />
         )}
@@ -208,7 +208,10 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
           className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 pointer-events-none pb-safe"
         >
             <div
-              className="relative w-full max-w-md flex flex-col pointer-events-auto glass-panel shadow-2xl border border-white/20 rounded-3xl"
+              className="relative w-full max-w-md flex flex-col pointer-events-auto glass-panel shadow-2xl border border-glass-border rounded-3xl"
+              role="dialog"
+              aria-modal="true"
+              aria-label={editingTransaction ? "Edit Transaction" : "Add Transaction"}
               style={{
                 maxHeight: "95dvh",
                 overflow: "hidden",
@@ -216,17 +219,17 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
               }}
             >
             <div className="relative z-10 w-full flex-1 min-h-0 flex flex-col items-stretch h-full max-h-[95dvh]">
-              <div className="absolute top-0 right-0 w-64 h-64 bg-purple-500/20 rounded-full blur-[60px] pointer-events-none -translate-y-1/2 translate-x-1/2" />
+                <div className="absolute top-0 right-0 w-64 h-64 bg-accent/10 rounded-full blur-[60px] pointer-events-none -translate-y-1/2 translate-x-1/2" />
 
               {/* Header (Fixed) */}
               <div className="flex items-center justify-between p-5 sm:p-8 pb-1 sm:pb-2 shrink-0 relative z-10">
-                <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
+                <h2 className="text-xl sm:text-2xl font-bold text-bright tracking-tight">
                   {editingTransaction ? "Edit Transaction" : "Add Transaction"}
                 </h2>
                 <button
                   type="button"
                   onClick={onClose}
-                  className="p-2 -mr-2 rounded-full hover:bg-white/10 text-slate-400 hover:text-white transition-colors"
+                  className="p-2 -mr-2 rounded-full hover:bg-bg-card/50 text-muted hover:text-bright transition-colors"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -239,7 +242,7 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
               >
                 {/* Scrollable Form Fields with Fade Mask */}
                 <div
-                  className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-5 sm:px-8 py-6 space-y-3 sm:space-y-5 w-full max-w-[320px] mx-auto sm:max-w-none scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent"
+                  className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-5 sm:px-8 py-6 space-y-3 sm:y-5 w-full max-w-[320px] mx-auto sm:max-w-none scrollbar-thin scrollbar-thumb-bg-border scrollbar-track-transparent"
                   style={{
                     maskImage:
                       "linear-gradient(to bottom, transparent 0px, black 24px, black calc(100% - 24px), transparent 100%)",
@@ -249,7 +252,7 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
                 >
                   {/* ── Currency selector ── */}
                   <div className="space-y-2">
-                    <label className="text-xs text-slate-400 font-medium ml-1 tracking-wider uppercase">
+                    <label className="text-xs text-muted font-medium ml-1 tracking-wider uppercase">
                       Currency
                     </label>
                     <div className="grid grid-cols-3 gap-2">
@@ -261,13 +264,13 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
                           className={`relative py-2 rounded-full text-xs sm:text-sm font-medium transition-colors z-10 ${
                             currency === c.code
                               ? "text-white"
-                              : "text-slate-400 hover:text-slate-200"
+                              : "text-muted hover:text-bright"
                           }`}
                         >
                           {currency === c.code && (
                             <motion.div
                               layoutId="currency-highlight"
-                              className="absolute inset-0 bg-teal-500/30 border border-teal-400/50 rounded-full z-[-1]"
+                              className="absolute inset-0 bg-accent/20 border border-accent/20 rounded-full z-[-1]"
                               transition={{
                                 type: "spring",
                                 stiffness: 400,
@@ -282,14 +285,14 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
                   </div>
 
                   {/* ── Expense / Income toggle ── */}
-                  <div className="flex bg-white/5 p-1 rounded-full border border-white/10 backdrop-blur-sm w-full relative">
+                  <div className="flex bg-bg-card/30 p-1 rounded-full border border-bg-border backdrop-blur-sm w-full relative">
                     <button
                       type="button"
                       onClick={() => handleTypeChange("expense")}
                       className={`relative flex-1 py-2 text-sm font-medium rounded-full z-10 transition-colors ${
                         type === "expense"
-                          ? "text-rose-300"
-                          : "text-slate-400 hover:text-slate-200"
+                          ? "text-rose-400"
+                          : "text-muted hover:text-bright"
                       }`}
                     >
                       {type === "expense" && (
@@ -305,15 +308,15 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
                       )}
                       Expense
                     </button>
-                    <button
-                      type="button"
-                      onClick={() => handleTypeChange("income")}
-                      className={`relative flex-1 py-2 text-sm font-medium rounded-full z-10 transition-colors ${
-                        type === "income"
-                          ? "text-emerald-300"
-                          : "text-slate-400 hover:text-slate-200"
-                      }`}
-                    >
+                      <button
+                        type="button"
+                        onClick={() => handleTypeChange("income")}
+                        className={`relative flex-1 py-2 text-sm font-medium rounded-full z-10 transition-colors ${
+                          type === "income"
+                            ? "text-emerald-400"
+                            : "text-muted hover:text-bright"
+                        }`}
+                      >
                       {type === "income" && (
                         <motion.div
                           layoutId="type-pill-highlight"
@@ -331,7 +334,7 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
 
                   {/* ── Amount ── */}
                   <div className="relative">
-                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-bold select-none">
+                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted text-sm font-bold select-none">
                       {CURRENCIES.find((c) => c.code === currency)?.symbol ??
                         currency}
                     </div>
@@ -342,14 +345,15 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
                       placeholder="0.00"
                       value={amount}
                       onChange={(e) => setAmount(e.target.value)}
-                      className="w-full bg-white/5 border border-white/10 rounded-full py-3 pl-10 pr-4 sm:py-3.5 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500/50 text-xl font-medium"
+                      aria-label="Amount"
+                      className="w-full bg-bg-card/50 border border-bg-border rounded-full py-3 pl-10 pr-4 sm:py-3.5 text-bright placeholder:text-muted/40 focus:outline-none focus:ring-2 focus:ring-accent/50 text-xl font-medium"
                       required
                     />
                   </div>
 
                   {/* ── Description ── */}
                   <div className="relative">
-                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted">
                       <Tag className="w-5 h-5" />
                     </div>
                     <input
@@ -357,28 +361,29 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
                       placeholder="Description (e.g., Groceries)"
                       value={title}
                       onChange={(e) => setTitle(e.target.value)}
-                      className="w-full bg-white/5 border border-white/10 rounded-full py-3 pl-12 pr-4 sm:py-3.5 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500/50 font-medium"
+                      aria-label="Description"
+                      className="w-full bg-bg-card/50 border border-bg-border rounded-full py-3 pl-12 pr-4 sm:py-3.5 text-bright placeholder:text-muted/40 focus:outline-none focus:ring-2 focus:ring-accent/50 font-medium"
                       required
                     />
                   </div>
 
                   {/* ── Date & Time picker ── */}
                   <div className="relative">
-                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
+                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted pointer-events-none">
                       <Calendar className="w-5 h-5" />
                     </div>
                     <input
                       type="datetime-local"
                       value={dateStr}
                       onChange={(e) => setDateStr(e.target.value)}
-                      className="w-full bg-white/5 border border-white/10 rounded-full py-3 pl-12 pr-4 sm:py-3.5 text-white focus:outline-none focus:ring-2 focus:ring-teal-500/50 font-medium [color-scheme:dark]"
+                      className="w-full bg-bg-card/50 border border-bg-border rounded-full py-3 pl-12 pr-4 sm:py-3.5 text-bright focus:outline-none focus:ring-2 focus:ring-accent/50 font-medium"
                       required
                     />
                   </div>
 
                   {/* ── Category ── */}
                   <div className="space-y-2">
-                    <label className="text-sm text-slate-400 font-medium ml-1">
+                    <label className="text-sm text-muted font-medium ml-1">
                       Category
                     </label>
                     <AnimatePresence mode="wait" initial={false}>
@@ -399,16 +404,17 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
                               setCategory(c.id);
                               setShowCustomInput(false);
                             }}
+                            aria-pressed={category === c.id}
                             className={`relative py-2.5 rounded-full text-sm font-medium transition-colors z-10 ${
                               category === c.id
-                                ? "text-teal-300"
-                                : "bg-white/5 text-slate-400 hover:text-slate-200 border border-white/5 hover:bg-white/10"
+                                ? "text-accent"
+                                : "bg-bg-card/30 text-muted hover:text-bright border border-bg-border hover:bg-bg-card/50"
                             }`}
                           >
                             {category === c.id && (
                               <motion.div
                                 layoutId="category-highlight"
-                                className="absolute inset-0 bg-teal-500/20 border border-teal-500/30 rounded-full z-[-1]"
+                                className="absolute inset-0 bg-accent/20 border border-accent/20 rounded-full z-[-1]"
                                 transition={{
                                   type: "spring",
                                   stiffness: 400,
@@ -429,7 +435,7 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
                               animate={{ opacity: 1, scale: 1 }}
                               exit={{ opacity: 0, scale: 0.9 }}
                               transition={{ duration: 0.15 }}
-                              className="flex items-center gap-1 bg-white/5 border border-white/15 rounded-full px-2 py-0.5"
+                              className="flex items-center gap-1 bg-bg-card/30 border border-bg-border rounded-full px-2 py-0.5"
                             >
                               <input
                                 ref={customInputRef}
@@ -449,12 +455,12 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
                                   }
                                 }}
                                 placeholder="Custom…"
-                                className="bg-transparent text-sm text-white placeholder-slate-500 outline-none w-24"
+                                className="bg-transparent text-sm text-bright placeholder:text-muted/40 outline-none w-24"
                               />
                               <button
                                 type="button"
                                 onClick={handleCustomCategory}
-                                className="p-1 rounded-full hover:bg-teal-500/20 text-teal-400 transition-colors"
+                                className="p-1 rounded-full hover:bg-accent/20 text-accent transition-colors"
                               >
                                 <Check className="w-3.5 h-3.5" />
                               </button>
@@ -475,11 +481,11 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
                                   50,
                                 );
                               }}
-                              className="relative py-2.5 flex items-center justify-center gap-1 rounded-full text-sm font-medium z-10 text-teal-300"
+                              className="relative py-2.5 flex items-center justify-center gap-1 rounded-full text-sm font-medium z-10 text-accent"
                             >
                               <motion.div
                                 layoutId="category-highlight"
-                                className="absolute inset-0 bg-teal-500/20 border border-teal-500/30 rounded-full z-[-1]"
+                                className="absolute inset-0 bg-accent/20 border border-accent/20 rounded-full z-[-1]"
                                 transition={{
                                   type: "spring",
                                   stiffness: 400,
@@ -507,7 +513,7 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
                                   50,
                                 );
                               }}
-                              className="flex items-center justify-center gap-1 py-2.5 rounded-full text-sm font-medium bg-white/5 text-slate-500 hover:text-slate-300 border border-dashed border-white/10 hover:border-white/20 transition-all"
+                              className="flex items-center justify-center gap-1 py-2.5 rounded-full text-sm font-medium bg-white/5 text-[#808080] hover:text-[#F2F2F2] border border-dashed border-white/10 hover:border-white/20 transition-all"
                             >
                               <Plus className="w-3.5 h-3.5" />
                               Add custom
@@ -528,7 +534,7 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
                           className="overflow-hidden"
                         >
                           <div className="pt-3">
-                            <label className="text-xs text-slate-400 font-medium ml-1 mb-2 block tracking-wide uppercase">
+                            <label className="text-xs text-muted font-medium ml-1 mb-2 block tracking-wide uppercase opacity-60">
                               Custom Icon
                             </label>
                             <div className="flex flex-wrap gap-2">
@@ -540,8 +546,8 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
                                     onClick={() => setCustomIcon(iconName)}
                                     className={`p-2 rounded-xl transition-all ${
                                       customIcon === iconName
-                                        ? "bg-teal-500/20 text-teal-300 border border-teal-500/30"
-                                        : "bg-white/5 text-slate-400 border border-transparent hover:bg-white/10 hover:text-slate-200"
+                                        ? "bg-accent/20 text-accent border border-accent/30"
+                                        : "bg-bg-card/30 text-muted border border-transparent hover:bg-bg-card/50 hover:text-bright"
                                     }`}
                                   >
                                     <IconComp className="w-5 h-5" />
@@ -557,10 +563,10 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
                 </div>
 
                 {/* ── Submit (Fixed Footer) ── */}
-                <div className="shrink-0 p-5 sm:p-8 pt-2 sm:pt-4 border-t border-white/5 bg-slate-900/10">
+                <div className="shrink-0 p-5 sm:p-8 pt-2 sm:pt-4 border-t border-bg-border bg-bg-card/10">
                   <button
                     type="submit"
-                    className="w-full bg-teal-500 hover:bg-teal-400 text-slate-900 font-bold py-3.5 px-6 rounded-full shadow-[0_0_20px_rgba(20,184,166,0.3)] transition-all duration-300 hover:shadow-[0_0_30px_rgba(20,184,166,0.5)] transform hover:-translate-y-0.5 text-base uppercase tracking-wide"
+                    className="w-full bg-accent hover:bg-accent-hover text-white font-bold py-3.5 px-6 rounded-full shadow-[0_0_20px_rgba(255,0,55,0.3)] transition-all duration-300 hover:shadow-[0_0_30px_rgba(255,0,55,0.5)] transform hover:-translate-y-0.5 text-base uppercase tracking-wide"
                   >
                     {editingTransaction ? "Save Changes" : "Save Transaction"}
                   </button>

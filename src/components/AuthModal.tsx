@@ -17,7 +17,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose }) => {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 flex items-center justify-center p-4 z-50 bg-slate-950/40 backdrop-blur-sm"
+      className="fixed inset-0 flex items-center justify-center p-4 z-50 bg-black/40 backdrop-blur-sm"
     >
       <div className="absolute inset-0" onClick={onClose} />
       <motion.div
@@ -25,26 +25,25 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose }) => {
         transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
         className="w-full max-w-md"
       >
-        <GlassCard className="text-center p-10 flex flex-col items-center border border-white/20 shadow-2xl relative overflow-hidden">
-          {onClose && (
+        <GlassCard className="text-center p-10 flex flex-col items-center border border-glass-border shadow-2xl relative overflow-hidden">
             <button
               onClick={onClose}
-              className="absolute top-4 right-4 p-2 text-slate-400 hover:text-white transition-colors"
+              aria-label="Close authentication modal"
+              className="absolute top-4 right-4 p-2 text-muted hover:text-bright transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
-          )}
           {/* Subtle background glow inside the card */}
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-64 bg-teal-500/20 rounded-full blur-[60px] pointer-events-none" />
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-64 bg-accent/20 rounded-full blur-[60px] pointer-events-none" />
 
-          <div className="w-16 h-16 rounded-full bg-slate-800/50 flex items-center justify-center mb-6 shadow-lg border border-white/10 relative z-10">
-            <LogIn className="w-8 h-8 text-teal-400" />
+          <div className="w-16 h-16 rounded-full bg-bg-card/50 flex items-center justify-center mb-6 shadow-lg border border-bg-border relative z-10">
+            <LogIn className="w-8 h-8 text-accent" />
           </div>
 
-          <h2 className="text-3xl font-bold text-white mb-2 relative z-10 tracking-tight">
+          <h2 className="text-3xl font-bold text-bright mb-2 relative z-10 tracking-tight">
             Lumina Finance
           </h2>
-          <p className="text-slate-400 mb-8 relative z-10">
+          <p className="text-muted mb-8 relative z-10">
             Sign in to sync your premium expense tracker across devices.
           </p>
 
@@ -79,11 +78,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose }) => {
           </GlassButton>
 
           <div className="w-full flex items-center justify-center gap-4 my-6 opacity-30">
-            <div className="h-px bg-white flex-1" />
-            <span className="text-xs uppercase tracking-wider font-semibold text-white">
+            <div className="h-px bg-bg-border flex-1" />
+            <span className="text-xs uppercase tracking-wider font-semibold text-bright">
               or
             </span>
-            <div className="h-px bg-white flex-1" />
+            <div className="h-px bg-bg-border flex-1" />
           </div>
 
           <GlassButton

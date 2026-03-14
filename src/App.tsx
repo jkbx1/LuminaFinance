@@ -9,8 +9,8 @@ const AppContent: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-950">
-        <div className="w-12 h-12 border-4 border-teal-500/30 border-t-teal-500 rounded-full animate-spin" />
+      <div className="min-h-screen flex items-center justify-center bg-black">
+        <div className="w-12 h-12 border-4 border-accent/30 border-t-accent rounded-full animate-spin" />
       </div>
     );
   }
@@ -22,13 +22,17 @@ const AppContent: React.FC = () => {
   );
 };
 
+import { ThemeProvider } from "./context/ThemeContext";
+
 function App() {
   return (
-    <AuthProvider>
-      <LayoutGroup>
-        <AppContent />
-      </LayoutGroup>
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <LayoutGroup>
+          <AppContent />
+        </LayoutGroup>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
 

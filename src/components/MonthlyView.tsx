@@ -193,18 +193,21 @@ export const MonthlyView: React.FC<MonthlyViewProps> = ({
           );
           setViewMode("day");
         }}
+        aria-label={`Show transactions for ${currentMonth.toLocaleDateString(undefined, { month: "long", day: "numeric", year: "numeric" })}`}
+        aria-pressed={isSelected}
         className={`relative p-3 rounded-full flex flex-col items-center justify-center transition-all ${
           isSelected
-            ? "bg-teal-500 text-slate-900 font-bold shadow-[0_0_15px_rgba(20,184,166,0.5)]"
-            : "hover:bg-white/10 text-slate-300 font-medium"
+            ? "bg-accent text-white font-bold shadow-[0_0_15px_rgba(255,0,55,0.5)]"
+            : "hover:bg-bg-card/50 text-muted font-medium"
         }`}
       >
         {dayNum}
         {hasTx && (
           <span
             className={`absolute bottom-1.5 w-1.5 h-1.5 rounded-full ${
-              isSelected ? "bg-slate-900" : "bg-teal-400"
+              isSelected ? "bg-white" : "bg-accent"
             }`}
+            aria-hidden="true"
           />
         )}
       </button>
@@ -314,35 +317,37 @@ export const MonthlyView: React.FC<MonthlyViewProps> = ({
   return (
     <div className="space-y-6 pb-20 overflow-x-hidden animate-in fade-in zoom-in-95 duration-300">
       <GlassCard className="max-w-md mx-auto relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-40 h-40 bg-teal-500/10 rounded-full blur-[40px] pointer-events-none -translate-y-1/2 translate-x-1/2" />
+        <div className="absolute top-0 right-0 w-40 h-40 bg-accent/10 rounded-full blur-[40px] pointer-events-none -translate-y-1/2 translate-x-1/2" />
         <div className="flex flex-col gap-4 mb-6 relative z-10">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4">
             <div className="flex items-center justify-between w-full sm:w-auto mt-2 sm:mt-0 order-2 sm:order-1">
               <button
                 onClick={handlePrevMonth}
-                className="p-1.5 sm:p-2 bg-white/5 hover:bg-white/10 border border-white/5 rounded-full transition-colors text-slate-300 hover:text-white"
+                aria-label="Previous month"
+                className="p-1.5 sm:p-2 bg-bg-card/30 hover:bg-bg-card/50 border border-bg-border rounded-full transition-colors text-muted hover:text-bright"
               >
-                <ChevronLeft className="w-5 h-5" />
+                <ChevronLeft className="w-5 h-5" aria-hidden="true" />
               </button>
-              <h2 className="text-lg sm:text-xl font-bold text-white tracking-wide capitalize sm:hidden">
+              <h2 className="text-lg sm:text-xl font-bold text-bright tracking-wide capitalize sm:hidden">
                 {monthYearStr}
               </h2>
               <button
                 onClick={handleNextMonth}
-                className="p-1.5 sm:p-2 bg-white/5 hover:bg-white/10 border border-white/5 rounded-full transition-colors text-slate-300 hover:text-white"
+                aria-label="Next month"
+                className="p-1.5 sm:p-2 bg-bg-card/30 hover:bg-bg-card/50 border border-bg-border rounded-full transition-colors text-muted hover:text-bright"
               >
-                <ChevronRight className="w-5 h-5" />
+                <ChevronRight className="w-5 h-5" aria-hidden="true" />
               </button>
             </div>
 
             <div className="flex items-center gap-3 order-1 sm:order-2">
-              <h2 className="text-xl font-bold text-white tracking-wide capitalize hidden sm:block">
+              <h2 className="text-xl font-bold text-bright tracking-wide capitalize hidden sm:block">
                 {monthYearStr}
               </h2>
               <button
                 onClick={handleToday}
-                className="px-3 py-1.5 bg-teal-500/20 text-teal-400 hover:bg-teal-500/30 border border-teal-500/30 rounded-full text-xs font-semibold uppercase tracking-wider transition-colors whitespace-nowrap"
-                title="Go to Today"
+                className="px-3 py-1.5 bg-accent/20 text-accent hover:bg-accent/30 border border-accent/30 rounded-full text-xs font-semibold uppercase tracking-wider transition-colors whitespace-nowrap"
+                aria-label="Go to Today"
               >
                 Go to Today
               </button>
@@ -354,7 +359,7 @@ export const MonthlyView: React.FC<MonthlyViewProps> = ({
           {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((d) => (
             <div
               key={d}
-              className="text-xs font-bold text-slate-500 uppercase tracking-widest"
+              className="text-xs font-bold text-muted uppercase tracking-widest opacity-60"
             >
               {d}
             </div>
@@ -376,7 +381,7 @@ export const MonthlyView: React.FC<MonthlyViewProps> = ({
             filterStartDate !== "" ||
             filterEndDate !== "") && (
             <div className="flex-1 flex items-center gap-2 animate-in fade-in slide-in-from-left-2 duration-300 min-w-0">
-              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest whitespace-nowrap">
+              <span className="text-[10px] font-bold text-muted uppercase tracking-widest whitespace-nowrap opacity-60">
                 Active:
               </span>
               <div
@@ -389,12 +394,12 @@ export const MonthlyView: React.FC<MonthlyViewProps> = ({
                 }}
               >
                 {filterType !== "all" && (
-                  <span className="px-2.5 py-1 bg-teal-500/10 text-teal-400 border border-teal-500/20 rounded-full text-[10px] font-bold uppercase tracking-wider whitespace-nowrap">
+                  <span className="px-2.5 py-1 bg-accent/10 text-accent border border-accent/20 rounded-full text-[10px] font-bold uppercase tracking-wider whitespace-nowrap">
                     {filterType}
                   </span>
                 )}
                 {(filterMinAmount !== null || filterMaxAmount !== null) && (
-                  <span className="px-2.5 py-1 bg-teal-500/10 text-teal-400 border border-teal-500/20 rounded-full text-[10px] font-bold uppercase tracking-wider whitespace-nowrap">
+                  <span className="px-2.5 py-1 bg-accent/10 text-accent border border-accent/20 rounded-full text-[10px] font-bold uppercase tracking-wider whitespace-nowrap">
                     {filterMinAmount !== null
                       ? `${defaultCurrency}${filterMinAmount}`
                       : "Any"}{" "}
@@ -405,7 +410,7 @@ export const MonthlyView: React.FC<MonthlyViewProps> = ({
                   </span>
                 )}
                 {(filterStartDate || filterEndDate) && (
-                  <span className="px-2.5 py-1 bg-teal-500/10 text-teal-400 border border-teal-500/20 rounded-full text-[10px] font-bold uppercase tracking-wider whitespace-nowrap">
+                  <span className="px-2.5 py-1 bg-accent/10 text-accent border border-accent/20 rounded-full text-[10px] font-bold uppercase tracking-wider whitespace-nowrap">
                     {filterStartDate
                       ? new Date(filterStartDate).toLocaleDateString("en-US", {
                           month: "short",
@@ -426,7 +431,7 @@ export const MonthlyView: React.FC<MonthlyViewProps> = ({
                 {selectedCategories.map((cat) => (
                   <span
                     key={cat}
-                    className="px-2.5 py-1 bg-teal-500/10 text-teal-400 border border-teal-500/20 rounded-full text-[10px] font-bold uppercase tracking-wider whitespace-nowrap"
+                    className="px-2.5 py-1 bg-accent/10 text-accent border border-accent/20 rounded-full text-[10px] font-bold uppercase tracking-wider whitespace-nowrap"
                   >
                     {cat}
                   </span>
@@ -456,7 +461,7 @@ export const MonthlyView: React.FC<MonthlyViewProps> = ({
               });
             });
           }}
-          className={`flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-full text-slate-300 hover:text-white transition-all shadow-lg active:scale-95 shrink-0 ${
+          className={`flex items-center gap-2 px-4 py-2 bg-bg-card/30 hover:bg-bg-card/50 border border-bg-border backdrop-blur-xl rounded-full text-muted hover:text-bright transition-all shadow-lg active:scale-95 shrink-0 ${
             isFilterModalOpen
               ? "opacity-0 pointer-events-none scale-75"
               : "opacity-100 pointer-events-auto scale-100"
@@ -499,7 +504,7 @@ export const MonthlyView: React.FC<MonthlyViewProps> = ({
       />
 
       {/* ── View Toggle ── */}
-      <div className="max-w-md mx-auto flex bg-white/5 p-1 rounded-full border border-white/10 backdrop-blur-sm relative mb-4">
+      <div className="max-w-md mx-auto flex bg-bg-card/30 p-1 rounded-full border border-bg-border backdrop-blur-sm relative mb-4">
         <button
           onClick={() => {
             setViewMode("day");
@@ -507,14 +512,14 @@ export const MonthlyView: React.FC<MonthlyViewProps> = ({
           }}
           className={`relative flex-1 py-1.5 sm:py-2 text-sm font-medium rounded-full z-10 transition-colors ${
             viewMode === "day"
-              ? "text-teal-300"
-              : "text-slate-400 hover:text-slate-200"
+              ? "text-accent"
+              : "text-muted hover:text-bright"
           }`}
         >
           {viewMode === "day" && (
             <motion.div
               layoutId="monthly-view-mode"
-              className="absolute inset-0 bg-teal-500/20 border border-teal-500/30 rounded-full z-[-1]"
+              className="absolute inset-0 bg-accent/20 border border-accent/30 rounded-full z-[-1]"
               transition={{ type: "spring", stiffness: 400, damping: 30 }}
             />
           )}
@@ -524,14 +529,14 @@ export const MonthlyView: React.FC<MonthlyViewProps> = ({
           onClick={() => setViewMode("month")}
           className={`relative flex-1 py-1.5 sm:py-2 text-sm font-medium rounded-full z-10 transition-colors ${
             viewMode === "month"
-              ? "text-teal-300"
-              : "text-slate-400 hover:text-slate-200"
+              ? "text-accent"
+              : "text-muted hover:text-bright"
           }`}
         >
           {viewMode === "month" && (
             <motion.div
               layoutId="monthly-view-mode"
-              className="absolute inset-0 bg-teal-500/20 border border-teal-500/30 rounded-full z-[-1]"
+              className="absolute inset-0 bg-accent/20 border border-accent/30 rounded-full z-[-1]"
               transition={{ type: "spring", stiffness: 400, damping: 30 }}
             />
           )}
@@ -550,7 +555,7 @@ export const MonthlyView: React.FC<MonthlyViewProps> = ({
             className="max-w-2xl mx-auto space-y-4"
           >
             <div className="flex items-center gap-4 mb-6">
-              <h3 className="text-xl font-bold text-white tracking-tight capitalize">
+              <h3 className="text-xl font-bold text-bright tracking-tight capitalize">
                 {injectedSelectedDate.toLocaleDateString(undefined, {
                   weekday: "long",
                   month: "long",
@@ -561,8 +566,8 @@ export const MonthlyView: React.FC<MonthlyViewProps> = ({
             </div>
 
             {selectedTxs.length === 0 ? (
-              <div className="glass-panel p-8 text-center rounded-2xl border border-white/5 border-dashed">
-                <p className="text-slate-400">No transactions on this day.</p>
+              <div className="glass-panel p-8 text-center rounded-2xl border border-bg-border border-dashed">
+                <p className="text-muted">No transactions on this day.</p>
               </div>
             ) : (
               <div className="space-y-4">
@@ -592,27 +597,27 @@ export const MonthlyView: React.FC<MonthlyViewProps> = ({
             className="max-w-2xl mx-auto space-y-6"
           >
             <div className="flex items-center gap-4 mb-4">
-              <h3 className="text-xl font-bold text-white tracking-tight capitalize">
+              <h3 className="text-xl font-bold text-bright tracking-tight capitalize">
                 {currentMonth.toLocaleDateString(undefined, {
                   month: "long",
                   year: "numeric",
                 })}
               </h3>
-              <div className="h-px flex-1 bg-gradient-to-r from-teal-500/30 to-transparent" />
+              <div className="h-px flex-1 bg-gradient-to-r from-accent/30 to-transparent" />
             </div>
 
             {monthTxs.length === 0 ? (
-              <div className="glass-panel p-8 text-center rounded-2xl border border-white/5 border-dashed">
-                <p className="text-slate-400">No transactions this month.</p>
+              <div className="glass-panel p-8 text-center rounded-2xl border border-bg-border border-dashed">
+                <p className="text-muted">No transactions this month.</p>
               </div>
             ) : (
               Object.entries(groupedMonthTxs).map(([dateStr, txs]) => (
                 <div key={dateStr} className="space-y-4">
                   <div className="flex items-center gap-4">
-                    <h4 className="text-sm font-bold text-slate-300 tracking-wider uppercase">
+                    <h4 className="text-sm font-bold text-muted tracking-wider uppercase">
                       {dateStr}
                     </h4>
-                    <div className="h-px flex-1 bg-gradient-to-r from-white/10 to-transparent" />
+                    <div className="h-px flex-1 bg-gradient-to-r from-bg-border to-transparent" />
                   </div>
                   <div className="space-y-4">
                     {txs.map((tx) => (

@@ -206,7 +206,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={modalTransition}
-            className="fixed inset-0 z-40 bg-slate-950/60 backdrop-blur-md"
+            className="fixed inset-0 z-40 bg-black/60 backdrop-blur-md"
             onClick={onClose}
           />
         )}
@@ -223,24 +223,24 @@ export const FilterModal: React.FC<FilterModalProps> = ({
           className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 pointer-events-none pb-safe"
         >
               <div
-                className="relative w-full max-w-md flex flex-col pointer-events-auto glass-panel shadow-2xl border border-white/20 rounded-3xl"
+                className="relative w-full max-w-md flex flex-col pointer-events-auto glass-panel shadow-2xl border border-glass-border rounded-3xl"
                 style={{
                   maxHeight: "95dvh",
                   overflow: "hidden",
                   viewTransitionName: !isMobileChrome ? "modal-morph" : undefined,
                 }}
               >
-                <div className="absolute top-0 right-0 w-64 h-64 bg-teal-500/10 rounded-full blur-[60px] pointer-events-none -translate-y-1/2 translate-x-1/2" />
+                <div className="absolute top-0 right-0 w-64 h-64 bg-accent/10 rounded-full blur-[60px] pointer-events-none -translate-y-1/2 translate-x-1/2" />
 
               {/* Header */}
               <div className="flex items-center justify-between p-6 pb-2 shrink-0 relative z-10">
                 <div className="flex items-center gap-2">
-                  <Filter className="w-5 h-5 text-teal-400" />
-                  <h2 className="text-xl font-bold text-white">Filter</h2>
+                  <Filter className="w-5 h-5 text-accent" />
+                  <h2 className="text-xl font-bold text-bright">Filter</h2>
                 </div>
                 <button
                   onClick={onClose}
-                  className="p-2 -mr-2 rounded-full hover:bg-white/10 text-slate-400 hover:text-white transition-colors"
+                  className="p-2 -mr-2 rounded-full hover:bg-bg-card/50 text-muted hover:text-bright transition-colors"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -248,7 +248,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({
 
               {/* Scrollable Content with Fade Mask */}
               <div
-                className="flex-1 min-h-0 overflow-y-auto px-5 sm:px-8 py-4 space-y-6 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent"
+                className="flex-1 min-h-0 overflow-y-auto px-5 sm:px-8 py-4 space-y-6 scrollbar-thin scrollbar-thumb-bg-border scrollbar-track-transparent"
                 style={{
                   maskImage:
                     "linear-gradient(to bottom, transparent 0px, black 24px, black calc(100% - 24px), transparent 100%)",
@@ -258,10 +258,10 @@ export const FilterModal: React.FC<FilterModalProps> = ({
               >
                 {/* Type Toggle */}
                 <div className="space-y-3">
-                  <label className="text-xs text-slate-400 font-bold uppercase tracking-widest ml-1">
+                  <label className="text-xs text-muted font-bold uppercase tracking-widest ml-1 opacity-60">
                     Transaction Type
                   </label>
-                  <div className="flex bg-white/5 p-1 rounded-full border border-white/10 backdrop-blur-sm">
+                  <div className="flex bg-bg-card/30 p-1 rounded-full border border-bg-border backdrop-blur-sm">
                     {(["all", "expense", "income"] as const).map((t) => (
                       <button
                         key={t}
@@ -271,14 +271,14 @@ export const FilterModal: React.FC<FilterModalProps> = ({
                         }}
                         className={`relative flex-1 py-1.5 text-xs font-bold uppercase tracking-wider rounded-full z-10 transition-colors ${
                           type === t
-                            ? "text-teal-300"
-                            : "text-slate-400 hover:text-slate-200"
+                            ? "text-accent"
+                            : "text-muted hover:text-bright"
                         }`}
                       >
                         {type === t && (
                           <motion.div
                             layoutId="filter-type-highlight"
-                            className="absolute inset-0 bg-teal-500/20 border border-teal-500/30 rounded-full z-[-1]"
+                            className="absolute inset-0 bg-accent/20 border border-accent/20 rounded-full z-[-1]"
                             transition={{
                               type: "spring",
                               stiffness: 400,
@@ -295,7 +295,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({
                 {/* Amount Range */}
                 <div className="space-y-4 pt-2">
                   <div className="flex items-center justify-between">
-                    <label className="text-xs text-slate-400 font-bold uppercase tracking-widest ml-1">
+                    <label className="text-xs text-muted font-bold uppercase tracking-widest ml-1 opacity-60">
                       Amount Range ({currencySymbol})
                     </label>
                     {(minAmount !== "" || maxAmount !== "") && (
@@ -304,7 +304,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({
                           setMinAmount("");
                           setMaxAmount("");
                         }}
-                        className="text-[10px] text-teal-400/60 hover:text-teal-400 font-bold uppercase tracking-wider transition-colors"
+                        className="text-[10px] text-accent/60 hover:text-accent font-bold uppercase tracking-wider transition-colors"
                       >
                         Clear Range
                       </button>
@@ -314,7 +314,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({
                   {/* Amount Inputs */}
                   <div className="grid grid-cols-2 gap-4">
                     <div className="relative">
-                      <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-[9px] font-bold uppercase tracking-widest pointer-events-none">
+                      <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted text-[9px] font-bold uppercase tracking-widest pointer-events-none opacity-60">
                         MIN
                       </div>
                       <input
@@ -322,11 +322,11 @@ export const FilterModal: React.FC<FilterModalProps> = ({
                         placeholder={absMin.toString()}
                         value={minAmount}
                         onChange={(e) => setMinAmount(e.target.value)}
-                        className="w-full bg-white/5 border border-white/10 rounded-2xl py-3 pl-14 pr-4 text-xs font-bold text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-teal-500/30 focus:border-teal-500/40 transition-all"
+                        className="w-full bg-bg-card/50 border border-bg-border rounded-2xl py-3 pl-14 pr-4 text-xs font-bold text-bright placeholder:text-muted/40 focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/40 transition-all"
                       />
                     </div>
                     <div className="relative">
-                      <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-[9px] font-bold uppercase tracking-widest pointer-events-none">
+                      <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted text-[9px] font-bold uppercase tracking-widest pointer-events-none opacity-60">
                         MAX
                       </div>
                       <input
@@ -334,17 +334,17 @@ export const FilterModal: React.FC<FilterModalProps> = ({
                         placeholder={absMax.toString()}
                         value={maxAmount}
                         onChange={(e) => setMaxAmount(e.target.value)}
-                        className="w-full bg-white/5 border border-white/10 rounded-2xl py-3 pl-14 pr-4 text-xs font-bold text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-teal-500/30 focus:border-teal-500/40 transition-all"
+                        className="w-full bg-bg-card/50 border border-bg-border rounded-2xl py-3 pl-14 pr-4 text-xs font-bold text-bright placeholder:text-muted/40 focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/40 transition-all"
                       />
                     </div>
                   </div>
 
                   {/* Dual-Range Slider */}
                   <div className="px-2 pt-2 pb-4">
-                    <div className="relative h-2 bg-white/5 rounded-full border border-white/5">
+                    <div className="relative h-2 bg-bg-card/50 rounded-full border border-bg-border">
                       {/* Active Range Highlight */}
                       <div
-                        className="absolute h-full bg-teal-500/30 rounded-full"
+                        className="absolute h-full bg-accent/30 rounded-full"
                         style={{
                           left: `${Math.max(0, Math.min(100, ((parseFloat(minAmount) || absMin) - absMin) / (absMax - absMin || 1) * 100))}%`,
                           right: `${100 - Math.max(0, Math.min(100, ((parseFloat(maxAmount) || absMax) - absMin) / (absMax - absMin || 1) * 100))}%`,
@@ -363,7 +363,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({
                           );
                           setMinAmount(val.toString());
                         }}
-                        className="absolute inset-0 w-full h-full appearance-none bg-transparent pointer-events-auto cursor-pointer z-20 range-thumb-teal"
+                        className="absolute inset-0 w-full h-full appearance-none bg-transparent pointer-events-auto cursor-pointer z-20 range-thumb-accent"
                       />
                       <input
                         type="range"
@@ -377,7 +377,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({
                           );
                           setMaxAmount(val.toString());
                         }}
-                        className="absolute inset-0 w-full h-full appearance-none bg-transparent pointer-events-auto cursor-pointer z-20 range-thumb-teal"
+                        className="absolute inset-0 w-full h-full appearance-none bg-transparent pointer-events-auto cursor-pointer z-20 range-thumb-accent"
                       />
                     </div>
                   </div>
@@ -388,7 +388,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({
                 {/* Date Range */}
                 <div className="space-y-4 pt-2">
                   <div className="flex items-center justify-between">
-                    <label className="text-xs text-slate-400 font-bold uppercase tracking-widest ml-1">
+                    <label className="text-xs text-muted font-bold uppercase tracking-widest ml-1 opacity-60">
                       Date Range
                     </label>
                     {(startDate !== "" || endDate !== "") && (
@@ -397,7 +397,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({
                           setStartDate("");
                           setEndDate("");
                         }}
-                        className="text-[10px] text-teal-400/60 hover:text-teal-400 font-bold uppercase tracking-wider transition-colors"
+                        className="text-[10px] text-accent/60 hover:text-accent font-bold uppercase tracking-wider transition-colors"
                       >
                         Clear Dates
                       </button>
@@ -406,25 +406,25 @@ export const FilterModal: React.FC<FilterModalProps> = ({
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="relative group">
-                      <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-[9px] font-bold uppercase tracking-widest pointer-events-none group-focus-within:text-teal-500/70 transition-colors">
+                      <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted text-[9px] font-bold uppercase tracking-widest pointer-events-none group-focus-within:text-accent/70 transition-colors opacity-60">
                         FROM
                       </div>
                       <input
                         type="date"
                         value={startDate}
                         onChange={(e) => setStartDate(e.target.value)}
-                        className="w-full bg-white/5 border border-white/10 rounded-2xl py-3 pl-14 pr-4 text-xs font-bold text-white [color-scheme:dark] focus:outline-none focus:ring-2 focus:ring-teal-500/30 focus:border-teal-500/40 transition-all"
+                        className="w-full bg-bg-card/50 border border-bg-border rounded-2xl py-3 pl-14 pr-4 text-xs font-bold text-bright transition-all"
                       />
                     </div>
                     <div className="relative group">
-                      <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-[9px] font-bold uppercase tracking-widest pointer-events-none group-focus-within:text-teal-500/70 transition-colors">
+                      <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted text-[9px] font-bold uppercase tracking-widest pointer-events-none group-focus-within:text-accent/70 transition-colors opacity-60">
                         TO
                       </div>
                       <input
                         type="date"
                         value={endDate}
                         onChange={(e) => setEndDate(e.target.value)}
-                        className="w-full bg-white/5 border border-white/10 rounded-2xl py-3 pl-14 pr-4 text-xs font-bold text-white [color-scheme:dark] focus:outline-none focus:ring-2 focus:ring-teal-500/30 focus:border-teal-500/40 transition-all"
+                        className="w-full bg-bg-card/50 border border-bg-border rounded-2xl py-3 pl-14 pr-4 text-xs font-bold text-bright transition-all"
                       />
                     </div>
                   </div>
@@ -437,7 +437,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({
                   <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
                     {/* Built-in Section */}
                     <div className="space-y-2">
-                      <label className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.2em] ml-1">
+                      <label className="text-[10px] text-muted font-bold uppercase tracking-[0.2em] ml-1 opacity-60">
                         Preset Categories
                       </label>
                       <div className="flex flex-wrap gap-2">
@@ -445,8 +445,8 @@ export const FilterModal: React.FC<FilterModalProps> = ({
                           onClick={() => setSelectedCategories([])}
                           className={`px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider transition-all border ${
                             selectedCategories.length === 0
-                              ? "bg-teal-500/20 text-teal-300 border-teal-500/40 shadow-[0_0_15px_rgba(20,184,166,0.2)]"
-                              : "bg-white/5 text-slate-400 border-white/5 hover:bg-white/10 hover:text-slate-200"
+                              ? "bg-accent/20 text-accent border-accent/40 shadow-[0_0_15px_rgba(255,0,55,0.2)]"
+                              : "bg-bg-card/30 text-muted border-bg-border hover:bg-bg-card/50 hover:text-bright"
                           }`}
                         >
                           All {type}s
@@ -460,8 +460,8 @@ export const FilterModal: React.FC<FilterModalProps> = ({
                             onClick={() => toggleCategory(cat.id)}
                             className={`px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider transition-all border ${
                               selectedCategories.includes(cat.id)
-                                ? "bg-teal-500/20 text-teal-300 border-teal-500/40 shadow-[0_0_15px_rgba(20,184,166,0.2)]"
-                                : "bg-white/5 text-slate-400 border-white/5 hover:bg-white/10 hover:text-slate-200"
+                                ? "bg-accent/20 text-accent border-accent/40 shadow-[0_0_15px_rgba(255,0,55,0.2)]"
+                                : "bg-bg-card/30 text-muted border-bg-border hover:bg-bg-card/50 hover:text-bright"
                             }`}
                           >
                             {cat.label}
@@ -473,7 +473,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({
                     {/* Custom Section */}
                     {customCategories[type].length > 0 && (
                       <div className="space-y-2">
-                        <label className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.2em] ml-1">
+                        <label className="text-[10px] text-muted font-bold uppercase tracking-[0.2em] ml-1 opacity-60">
                           Your Custom Categories
                         </label>
                         <div className="flex flex-wrap gap-2">
@@ -483,8 +483,8 @@ export const FilterModal: React.FC<FilterModalProps> = ({
                               onClick={() => toggleCategory(cat)}
                               className={`px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider transition-all border ${
                                 selectedCategories.includes(cat)
-                                  ? "bg-teal-500/20 text-teal-300 border-teal-500/40 shadow-[0_0_15px_rgba(20,184,166,0.2)]"
-                                  : "bg-white/5 text-slate-400 border-white/5 hover:bg-white/10 hover:text-slate-200"
+                                  ? "bg-accent/20 text-accent border-accent/40 shadow-[0_0_15px_rgba(255,0,55,0.2)]"
+                                  : "bg-bg-card/30 text-muted border-bg-border hover:bg-bg-card/50 hover:text-bright"
                               }`}
                             >
                               {cat}
@@ -497,8 +497,8 @@ export const FilterModal: React.FC<FilterModalProps> = ({
                 )}
 
                 {type === "all" && (
-                  <div className="p-8 text-center glass-panel rounded-2xl border border-white/5 border-dashed">
-                    <p className="text-slate-400 text-sm">
+                  <div className="p-8 text-center glass-panel rounded-2xl border border-bg-border border-dashed">
+                    <p className="text-muted text-sm">
                       Showing all transaction types and categories.
                     </p>
                   </div>
@@ -506,16 +506,16 @@ export const FilterModal: React.FC<FilterModalProps> = ({
               </div>
 
               {/* Footer */}
-              <div className="p-6 pt-2 shrink-0 border-t border-white/5 bg-slate-900/20 flex gap-3">
+              <div className="p-6 pt-2 shrink-0 border-t border-bg-border bg-bg-card/20 flex gap-3">
                 <button
                   onClick={handleReset}
-                  className="flex-1 py-3 px-4 rounded-full text-xs font-bold uppercase tracking-widest text-slate-400 hover:text-white hover:bg-white/5 transition-all"
+                  className="flex-1 py-3 px-4 rounded-full text-xs font-bold uppercase tracking-widest text-muted hover:text-bright hover:bg-bg-card/30 transition-all"
                 >
                   Reset All
                 </button>
                 <button
                   onClick={handleApply}
-                  className="flex-[2] bg-teal-500 hover:bg-teal-400 text-slate-900 font-bold py-3 px-6 rounded-full shadow-[0_0_20px_rgba(20,184,166,0.3)] transition-all transform hover:-translate-y-0.5 text-xs uppercase tracking-widest flex items-center justify-center gap-2"
+                  className="flex-[2] bg-accent hover:bg-accent-hover text-white font-bold py-3 px-6 rounded-full shadow-[0_0_20px_rgba(255,0,55,0.3)] transition-all transform hover:-translate-y-0.5 text-xs uppercase tracking-widest flex items-center justify-center gap-2"
                 >
                   <Check className="w-4 h-4" />
                   Apply Filters
