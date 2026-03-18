@@ -29,6 +29,7 @@ import { GlassyDonutChart } from "./GlassyDonutChart";
 import { AddExpenseModal } from "./AddExpenseModal";
 import { MonthlyView } from "./MonthlyView";
 import { FloatingNavbar } from "./ui/FloatingNavbar";
+import { ExchangeRatesPanel } from "./ExchangeRatesPanel";
 
 export const Dashboard: React.FC = () => {
   const { user, logout, isGuest, signInWithGoogle, clearGuest } = useAuth();
@@ -38,7 +39,7 @@ export const Dashboard: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] =
     useState<Transaction | null>(null);
-  const [view, setView] = useState<"overview" | "monthly">("overview");
+  const [view, setView] = useState<"overview" | "monthly" | "rates">("overview");
   const [selectedCalendarDate, setSelectedCalendarDate] = useState<Date | null>(
     new Date(),
   );
@@ -796,7 +797,7 @@ export const Dashboard: React.FC = () => {
                   </div>
                 </div>
               </motion.div>
-            ) : (
+            ) : view === "monthly" ? (
               <motion.div
                 key="monthly"
                 initial={{ opacity: 0, x: 30 }}
@@ -819,6 +820,11 @@ export const Dashboard: React.FC = () => {
                   setIsFilterModalOpen={setIsFilterModalOpen}
                 />
               </motion.div>
+            ) : (
+              <ExchangeRatesPanel
+                latestRates={exchangeRates}
+                ratesLoading={ratesLoading}
+              />
             )}
           </AnimatePresence>
         </div>
@@ -868,6 +874,24 @@ export const Dashboard: React.FC = () => {
                 />
               )}
               Monthly
+            </button>
+            <button
+              onClick={() => setView("rates")}
+              className={`relative flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-full z-10 transition-all duration-300 ${
+                view === "rates"
+                  ? "text-white"
+                  : "text-slate-400 hover:text-white"
+              }`}
+              aria-label="Show exchange rates"
+            >
+              {view === "rates" && (
+                <motion.div
+                  layoutId="view-toggle-pill"
+                  className="absolute inset-0 bg-accent rounded-full z-[-1] shadow-[0_0_20px_rgba(255,0,55,0.4)]"
+                  transition={{ duration: 0.3, ease: "easeOut" }}
+                />
+              )}
+              Rates
             </button>
           </div>
 
