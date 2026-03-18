@@ -49,16 +49,15 @@ export const FloatingNavbar: React.FC<FloatingNavbarProps> = ({
   }, [lastScrollY]);
 
   return (
-    <div className="fixed top-6 left-0 right-0 z-30 px-4 md:px-6 pointer-events-none">
+    <div className="fixed top-0 left-0 right-0 z-30 px-4 md:px-6 pointer-events-none overflow-hidden">
       <motion.nav
-        initial={{ y: -100, opacity: 0 }}
-        animate={{ 
-          y: isVisible ? 0 : -120, 
-          opacity: isVisible ? 1 : 0,
-        }}
+        initial={{ top: -100 }}
+        animate={{ top: isVisible ? 24 : -120 }}
         transition={{ duration: 0.5, ease: "easeOut" }}
-        className="max-w-7xl mx-auto w-full pointer-events-auto"
+        className="fixed left-4 right-4 md:left-6 md:right-6 z-30 pointer-events-auto"
       >
+        <div className="max-w-7xl mx-auto w-full">
+        {/* Glass layer: no opacity animation so backdrop-filter stays visible during enter/leave */}
         <div 
           className="glass-panel w-full flex flex-col overflow-hidden transition-[border-radius,background-color] duration-500 ease-in-out"
           style={{ 
@@ -69,12 +68,52 @@ export const FloatingNavbar: React.FC<FloatingNavbarProps> = ({
             border: "1px solid var(--glass-border)"
           }}
         >
-          <div className={`p-1 flex flex-col transition-all duration-500 ${isBlurred ? 'opacity-20 blur-[2px] pointer-events-none' : 'opacity-100 blur-0'}`}>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{
+              opacity: isBlurred
+                ? (isVisible ? 0.2 : 0)
+                : (isVisible ? 1 : 0),
+            }}
+            transition={{ duration: 0.4, ease: "easeOut" }}
+            className={`p-1 flex flex-col transition-all duration-500 ${isBlurred ? 'blur-[2px] pointer-events-none' : 'blur-0'}`}
+          >
             <div className="flex items-center justify-between w-full h-14 px-3">
               {/* Logo & Welcome */}
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-accent/20 flex items-center justify-center border border-accent/20 shadow-[0_0_15px_rgba(255,0,55,0.1)] shrink-0 overflow-hidden p-1.5">
-                  <img src="/icon.svg" alt="Lumina" className="w-full h-full object-contain" />
+                <div className="w-10 h-10 rounded-full bg-accent/20 flex items-center justify-center border border-accent/20 shadow-[0_0_15px_rgba(255,0,55,0.1)] shrink-0 overflow-hidden p-2">
+                  <svg viewBox="0 0 256 256" className="w-full h-full object-contain overflow-visible">
+                    <defs>
+                      <filter id="neon-glow" x="-50%" y="-50%" width="200%" height="200%">
+                        <feGaussianBlur stdDeviation="6" result="blur" />
+                        <feMerge>
+                          <feMergeNode in="blur" />
+                          <feMergeNode in="SourceGraphic" />
+                        </feMerge>
+                      </filter>
+                    </defs>
+                    <rect x="144" y="56" width="48" height="72" rx="6" fill="#FF004D" filter="url(#neon-glow)" />
+                    <rect x="144" y="56" width="48" height="72" rx="6" fill="#FF004D" />
+                    <path 
+                      d="M 48 104 Q 128 128 208 104" 
+                      fill="none" 
+                      stroke="currentColor" 
+                      strokeWidth="12" 
+                      strokeLinecap="round" 
+                      className="text-bright" 
+                    />
+                    <path 
+                      d="M 48 104 Q 128 128 208 104 L 208 176 C 208 193.6 193.6 208 176 208 L 80 208 C 62.4 208 48 193.6 48 176 Z" 
+                      fill="none" 
+                      stroke="currentColor" 
+                      strokeWidth="12" 
+                      strokeLinejoin="round" 
+                      className="text-bright" 
+                    />
+                    <circle cx="72" cy="180" r="4" fill="currentColor" className="text-bright" />
+                    <circle cx="92" cy="180" r="4" fill="currentColor" className="text-bright" />
+                    <circle cx="112" cy="180" r="4" fill="currentColor" className="text-bright" />
+                  </svg>
                 </div>
                 <div className="hidden sm:block">
                   <h1 className="text-sm font-black text-bright tracking-tight leading-none uppercase">Lumina Finance</h1>
@@ -188,7 +227,8 @@ export const FloatingNavbar: React.FC<FloatingNavbarProps> = ({
                 </motion.div>
               )}
             </AnimatePresence>
-          </div>
+          </motion.div>
+        </div>
         </div>
       </motion.nav>
     </div>

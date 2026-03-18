@@ -52,16 +52,22 @@ const CustomTooltip = ({
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.2, ease: "easeOut" }}
-          className="p-3 rounded-xl border border-glass-border shadow-2xl bg-bg-card/95 backdrop-blur-md"
+          className="p-3 rounded-xl border border-glass-border shadow-2xl bg-bg-card/95 backdrop-blur-md flex flex-col gap-1.5"
         >
-          <p className="text-bright text-sm font-medium mb-1">
-            {payload[0].name}
-          </p>
-          <p
-            className="text-lg font-bold"
-            style={{ color: payload[0].payload.color }}
-          >
-            {currencySymbol} {payload[0].value.toFixed(2)}
+          <div className="flex items-center gap-2">
+            <div 
+              className="w-2.5 h-2.5 rounded-full shadow-[0_0_8px_rgba(0,0,0,0.2)]"
+              style={{ backgroundColor: payload[0].payload.color }}
+            />
+            <p className="text-muted text-[10px] font-bold uppercase tracking-widest">
+              {payload[0].name}
+            </p>
+          </div>
+          <p className="text-bright text-xl font-bold tracking-tight">
+            {currencySymbol} {payload[0].value.toLocaleString(undefined, {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            })}
           </p>
         </motion.div>
       </div>

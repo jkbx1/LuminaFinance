@@ -42,6 +42,7 @@ export const Dashboard: React.FC = () => {
   const [selectedCalendarDate, setSelectedCalendarDate] = useState<Date | null>(
     new Date(),
   );
+  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
 
   const [chartTimeframe, setChartTimeframe] = useState<
     "daily" | "weekly" | "monthly" | "yearly" | "all"
@@ -279,8 +280,7 @@ export const Dashboard: React.FC = () => {
   };
 
   const openAddModal = () => {
-    const isMobile = window.innerWidth < 640;
-    const targetId = isMobile ? "fab-add-button-mobile" : "fab-add-button";
+    const targetId = "fab-add-button";
     const target = document.getElementById(targetId);
     if (target && !isMobileChrome)
       target.style.viewTransitionName = "modal-morph";
@@ -330,10 +330,7 @@ export const Dashboard: React.FC = () => {
   );
 
   const closeModal = () => {
-    const isMobile = window.innerWidth < 640;
-    const defaultTargetId = isMobile
-      ? "fab-add-button-mobile"
-      : "fab-add-button";
+    const defaultTargetId = "fab-add-button";
     const targetId = editingTransaction
       ? `edit-btn-${editingTransaction.id}`
       : defaultTargetId;
@@ -462,11 +459,11 @@ export const Dashboard: React.FC = () => {
   );
 
   const colorMap: Record<string, string> = {
-    food: "#FF0037", // accent
-    shopping: "#808080", // gray
-    housing: "#333333", // dark gray
-    utilities: "#F2F2F2", // off-white
-    other: "#1A1A1A", // card bg slate-400
+    food: "#FF0037", // Red (Accent)
+    shopping: "#6366F1", // Indigo
+    housing: "#F59E0B", // Amber
+    utilities: "#10B981", // Emerald
+    other: "#94A3B8", // Slate
   };
 
   const chartData = Object.entries(chartDataMap).map(([name, value]) => ({
@@ -483,10 +480,7 @@ export const Dashboard: React.FC = () => {
 
   return (
     <LayoutGroup>
-      <motion.main
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+      <main
         className="min-h-screen pt-32 pb-32 px-4 md:px-8 relative z-0 selection:bg-accent/30"
       >
         <Background3D />
@@ -497,7 +491,7 @@ export const Dashboard: React.FC = () => {
           onLogout={logout}
           onSync={handleLoginAndSync}
           welcomeName={user?.displayName?.split(" ")[0] || "User"}
-          isBlurred={isModalOpen || !!editingTransaction}
+          isBlurred={isModalOpen || !!editingTransaction || isFilterModalOpen}
         />
 
         <div className="max-w-7xl mx-auto">
@@ -524,7 +518,7 @@ export const Dashboard: React.FC = () => {
                         aria-pressed={defaultCurrency === code}
                         className={`relative flex-1 px-2 py-1.5 text-[10px] font-bold rounded-full transition-colors z-10 ${
                           defaultCurrency === code
-                            ? "text-white"
+                            ? "text-bright"
                             : "text-muted hover:text-bright"
                         }`}
                       >
@@ -821,6 +815,8 @@ export const Dashboard: React.FC = () => {
                   convertToDefault={convertToDefault}
                   injectedSelectedDate={selectedCalendarDate}
                   setInjectedSelectedDate={setSelectedCalendarDate}
+                  isFilterModalOpen={isFilterModalOpen}
+                  setIsFilterModalOpen={setIsFilterModalOpen}
                 />
               </motion.div>
             )}
@@ -828,51 +824,61 @@ export const Dashboard: React.FC = () => {
         </div>
 
         {/* Bottom Navigation (Toggle & Add Button) */}
-        {!isModalOpen && !editingTransaction && (
-          <nav className="fixed bottom-8 left-1/2 -translate-x-1/2 z-40 pointer-events-none flex items-center gap-3 w-full max-w-sm px-6">
-            <div className="glass-panel p-1.5 rounded-full flex flex-1 pointer-events-auto border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] backdrop-blur-xl">
-              <button
-                onClick={() => setView("overview")}
-                className={`relative flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-full z-10 transition-all duration-300 ${
-                  view === "overview" ? "text-white" : "text-slate-400 hover:text-white"
-                }`}
-                aria-label="Show overview"
-              >
-                {view === "overview" && (
-                  <motion.div
-                    layoutId="view-toggle-pill"
-                    className="absolute inset-0 bg-accent rounded-full z-[-1] shadow-[0_0_20px_rgba(255,0,55,0.4)]"
-                    transition={{ duration: 0.3, ease: "easeOut" }}
-                  />
-                )}
-                Overview
-              </button>
-              <button
-                onClick={() => setView("monthly")}
-                className={`relative flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-full z-10 transition-all duration-300 ${
-                  view === "monthly" ? "text-white" : "text-slate-400 hover:text-white"
-                }`}
-              >
-                {view === "monthly" && (
-                  <motion.div
-                    layoutId="view-toggle-pill"
-                    className="absolute inset-0 bg-accent rounded-full z-[-1] shadow-[0_0_20px_rgba(255,0,55,0.4)]"
-                    transition={{ duration: 0.3, ease: "easeOut" }}
-                  />
-                )}
-                Monthly
-              </button>
-            </div>
-            
+        <motion.nav
+          initial={false}
+          animate={{
+            y: isModalOpen || !!editingTransaction || isFilterModalOpen ? 120 : 0,
+            visibility: isModalOpen || !!editingTransaction || isFilterModalOpen ? "hidden" : "visible"
+          } as any}
+          transition={{ duration: 0.5, ease: "easeOut" }}
+          className="fixed bottom-8 left-1/2 -translate-x-1/2 z-40 pointer-events-none flex items-center gap-3 w-full max-w-sm px-6"
+        >
+          <div className="glass-panel p-1.5 rounded-full flex flex-1 pointer-events-auto border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] backdrop-blur-xl">
             <button
-              id="fab-add-button"
-              onClick={openAddModal}
-              className="w-14 h-14 bg-accent rounded-full flex items-center justify-center text-white shadow-[0_10px_30px_rgba(255,0,55,0.4)] pointer-events-auto transition-all hover:scale-110 active:scale-95 hover:rotate-90 shrink-0"
+              onClick={() => setView("overview")}
+              className={`relative flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-full z-10 transition-all duration-300 ${
+                view === "overview"
+                  ? "text-white"
+                  : "text-slate-400 hover:text-white"
+              }`}
+              aria-label="Show overview"
             >
-              <Plus className="w-7 h-7 pointer-events-none" />
+              {view === "overview" && (
+                <motion.div
+                  layoutId="view-toggle-pill"
+                  className="absolute inset-0 bg-accent rounded-full z-[-1] shadow-[0_0_20px_rgba(255,0,55,0.4)]"
+                  transition={{ duration: 0.3, ease: "easeOut" }}
+                />
+              )}
+              Overview
             </button>
-          </nav>
-        )}
+            <button
+              onClick={() => setView("monthly")}
+              className={`relative flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-full z-10 transition-all duration-300 ${
+                view === "monthly"
+                  ? "text-white"
+                  : "text-slate-400 hover:text-white"
+              }`}
+            >
+              {view === "monthly" && (
+                <motion.div
+                  layoutId="view-toggle-pill"
+                  className="absolute inset-0 bg-accent rounded-full z-[-1] shadow-[0_0_20px_rgba(255,0,55,0.4)]"
+                  transition={{ duration: 0.3, ease: "easeOut" }}
+                />
+              )}
+              Monthly
+            </button>
+          </div>
+
+          <button
+            id="fab-add-button"
+            onClick={openAddModal}
+            className="w-14 h-14 bg-accent rounded-full flex items-center justify-center text-white shadow-[0_10px_30px_rgba(255,0,55,0.4)] pointer-events-auto transition-all hover:scale-110 active:scale-95 hover:rotate-90 shrink-0"
+          >
+            <Plus className="w-7 h-7 pointer-events-none" />
+          </button>
+        </motion.nav>
 
         <AddExpenseModal
           isOpen={isModalOpen}
@@ -882,7 +888,7 @@ export const Dashboard: React.FC = () => {
           onEdit={handleEditTransaction}
           defaultDate={selectedCalendarDate || new Date()}
         />
-      </motion.main>
+      </main>
     </LayoutGroup>
   );
 };

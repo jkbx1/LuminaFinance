@@ -17,6 +17,8 @@ interface MonthlyViewProps {
   convertToDefault: (amount: number, from: string) => number;
   injectedSelectedDate: Date | null;
   setInjectedSelectedDate: (date: Date | null) => void;
+  isFilterModalOpen: boolean;
+  setIsFilterModalOpen: (open: boolean) => void;
 }
 
 export const MonthlyView: React.FC<MonthlyViewProps> = ({
@@ -29,6 +31,8 @@ export const MonthlyView: React.FC<MonthlyViewProps> = ({
   convertToDefault,
   injectedSelectedDate,
   setInjectedSelectedDate,
+  isFilterModalOpen,
+  setIsFilterModalOpen,
 }) => {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [viewMode, setViewMode] = useState<"day" | "month">("day");
@@ -40,7 +44,6 @@ export const MonthlyView: React.FC<MonthlyViewProps> = ({
   const [filterMaxAmount, setFilterMaxAmount] = useState<number | null>(null);
   const [filterStartDate, setFilterStartDate] = useState<string>("");
   const [filterEndDate, setFilterEndDate] = useState<string>("");
-  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
 
   // Detect mobile Chrome synchronously — useMemo is correct on first render,
   // avoiding the useEffect delay that could cause glitchy View Transitions

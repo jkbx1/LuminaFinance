@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { createPortal } from "react-dom";
 import { X, Filter, Check } from "lucide-react";
 import { type Transaction } from "./ExpenseCard";
 
@@ -195,9 +196,10 @@ export const FilterModal: React.FC<FilterModalProps> = ({
 
   const modalTransition = { duration: 0.22, ease: "easeOut" as const };
 
-  return (
+  if (typeof document === "undefined") return null;
+
+  return createPortal(
     <>
-      {/* Backdrop in its own AnimatePresence — fades independently */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
@@ -206,324 +208,312 @@ export const FilterModal: React.FC<FilterModalProps> = ({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={modalTransition}
-            className="fixed inset-0 z-40 bg-black/60 backdrop-blur-md"
+            className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-md"
+            style={{ top: 0, left: 0, width: "100vw", height: "100vh" }}
             onClick={onClose}
           />
         )}
       </AnimatePresence>
 
-      {/* Panel rendered directly (no AnimatePresence) — unmounts immediately
-          when isOpen is false, so the view transition close can snapshot the button cleanly */}
       {isOpen && (
         <motion.div
           key="filter-modal-panel"
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={modalTransition}
-          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 pointer-events-none pb-safe"
+          className="fixed inset-0 z-[10000] flex items-center justify-center p-3 sm:p-6 pointer-events-none pb-safe"
         >
-              <div
-                className="relative w-full max-w-md flex flex-col pointer-events-auto glass-panel shadow-2xl border border-glass-border rounded-3xl"
-                style={{
-                  maxHeight: "95dvh",
-                  overflow: "hidden",
-                  viewTransitionName: !isMobileChrome ? "modal-morph" : undefined,
-                }}
-              >
-                <div className="absolute top-0 right-0 w-64 h-64 bg-accent/10 rounded-full blur-[60px] pointer-events-none -translate-y-1/2 translate-x-1/2" />
+          <div
+            className="relative w-full max-w-md flex flex-col pointer-events-auto glass-panel shadow-2xl border border-glass-border rounded-3xl"
+            style={{
+              maxHeight: "95dvh",
+              overflow: "hidden",
+              viewTransitionName: !isMobileChrome ? "modal-morph" : undefined,
+            }}
+          >
+            <div className="absolute top-0 right-0 w-64 h-64 bg-accent/10 rounded-full blur-[60px] pointer-events-none -translate-y-1/2 translate-x-1/2" />
 
-              {/* Header */}
-              <div className="flex items-center justify-between p-6 pb-2 shrink-0 relative z-10">
-                <div className="flex items-center gap-2">
-                  <Filter className="w-5 h-5 text-accent" />
-                  <h2 className="text-xl font-bold text-bright">Filter</h2>
+            <div className="flex items-center justify-between p-6 pb-2 shrink-0 relative z-10">
+              <div className="flex items-center gap-2">
+                <Filter className="w-5 h-5 text-accent" />
+                <h2 className="text-xl font-bold text-bright">Filter</h2>
+              </div>
+              <button
+                onClick={onClose}
+                className="p-2 -mr-2 rounded-full hover:bg-bg-card/50 text-muted hover:text-bright transition-colors"
+                aria-label="Close filter modal"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div
+              className="flex-1 min-h-0 overflow-y-auto px-5 sm:px-8 py-4 space-y-6 scrollbar-thin scrollbar-thumb-bg-border scrollbar-track-transparent"
+              style={{
+                maskImage:
+                  "linear-gradient(to bottom, transparent 0px, black 24px, black calc(100% - 24px), transparent 100%)",
+                WebkitMaskImage:
+                  "linear-gradient(to bottom, transparent 0px, black 24px, black calc(100% - 24px), transparent 100%)",
+              }}
+            >
+              <div className="space-y-3">
+                <label className="text-xs text-muted font-bold uppercase tracking-widest ml-1 opacity-60">
+                  Transaction Type
+                </label>
+                <div className="flex bg-bg-card/30 p-1 rounded-full border border-bg-border backdrop-blur-sm">
+                  {(["all", "expense", "income"] as const).map((t) => (
+                    <button
+                      key={t}
+                      onClick={() => {
+                        setType(t);
+                        setSelectedCategories([]);
+                      }}
+                      className={`relative flex-1 py-1.5 text-xs font-bold uppercase tracking-wider rounded-full z-10 transition-colors ${
+                        type === t
+                          ? "text-accent"
+                          : "text-muted hover:text-bright"
+                      }`}
+                    >
+                      {type === t && (
+                        <motion.div
+                          layoutId="filter-type-highlight"
+                          className="absolute inset-0 bg-accent/20 border border-accent/20 rounded-full z-[-1]"
+                          transition={{
+                            type: "spring",
+                            stiffness: 400,
+                            damping: 30,
+                          }}
+                        />
+                      )}
+                      {t}
+                    </button>
+                  ))}
                 </div>
-                <button
-                  onClick={onClose}
-                  className="p-2 -mr-2 rounded-full hover:bg-bg-card/50 text-muted hover:text-bright transition-colors"
-                >
-                  <X className="w-5 h-5" />
-                </button>
               </div>
 
-              {/* Scrollable Content with Fade Mask */}
-              <div
-                className="flex-1 min-h-0 overflow-y-auto px-5 sm:px-8 py-4 space-y-6 scrollbar-thin scrollbar-thumb-bg-border scrollbar-track-transparent"
-                style={{
-                  maskImage:
-                    "linear-gradient(to bottom, transparent 0px, black 24px, black calc(100% - 24px), transparent 100%)",
-                  WebkitMaskImage:
-                    "linear-gradient(to bottom, transparent 0px, black 24px, black calc(100% - 24px), transparent 100%)",
-                }}
-              >
-                {/* Type Toggle */}
-                <div className="space-y-3">
+              <div className="space-y-4 pt-2">
+                <div className="flex items-center justify-between">
                   <label className="text-xs text-muted font-bold uppercase tracking-widest ml-1 opacity-60">
-                    Transaction Type
+                    Amount Range ({currencySymbol})
                   </label>
-                  <div className="flex bg-bg-card/30 p-1 rounded-full border border-bg-border backdrop-blur-sm">
-                    {(["all", "expense", "income"] as const).map((t) => (
+                  {(minAmount !== "" || maxAmount !== "") && (
+                    <button
+                      onClick={() => {
+                        setMinAmount("");
+                        setMaxAmount("");
+                      }}
+                      className="text-[10px] text-accent/60 hover:text-accent font-bold uppercase tracking-wider transition-colors"
+                    >
+                      Clear Range
+                    </button>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="relative">
+                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted text-[9px] font-bold uppercase tracking-widest pointer-events-none opacity-60">
+                      MIN
+                    </div>
+                    <input
+                      type="number"
+                      placeholder={absMin.toString()}
+                      value={minAmount}
+                      onChange={(e) => setMinAmount(e.target.value)}
+                      className="w-full bg-bg-card/50 border border-bg-border rounded-2xl py-3 pl-14 pr-4 text-xs font-bold text-bright placeholder:text-muted/40 focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/40 transition-all"
+                    />
+                  </div>
+                  <div className="relative">
+                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted text-[9px] font-bold uppercase tracking-widest pointer-events-none opacity-60">
+                      MAX
+                    </div>
+                    <input
+                      type="number"
+                      placeholder={absMax.toString()}
+                      value={maxAmount}
+                      onChange={(e) => setMaxAmount(e.target.value)}
+                      className="w-full bg-bg-card/50 border border-bg-border rounded-2xl py-3 pl-14 pr-4 text-xs font-bold text-bright placeholder:text-muted/40 focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/40 transition-all"
+                    />
+                  </div>
+                </div>
+
+                <div className="px-2 pt-2 pb-4">
+                  <div className="relative h-2 bg-bg-card/50 rounded-full border border-bg-border">
+                    <div
+                      className="absolute h-full bg-accent/30 rounded-full"
+                      style={{
+                        left: `${Math.max(0, Math.min(100, ((parseFloat(minAmount) || absMin) - absMin) / (absMax - absMin || 1) * 100))}%`,
+                        right: `${100 - Math.max(0, Math.min(100, ((parseFloat(maxAmount) || absMax) - absMin) / (absMax - absMin || 1) * 100))}%`,
+                      }}
+                    />
+                    <input
+                      type="range"
+                      min={absMin}
+                      max={absMax}
+                      value={minAmount || absMin}
+                      onChange={(e) => {
+                        const val = Math.min(
+                          parseFloat(e.target.value),
+                          parseFloat(maxAmount) || absMax,
+                        );
+                        setMinAmount(val.toString());
+                      }}
+                      className="absolute inset-0 w-full h-full appearance-none bg-transparent pointer-events-auto cursor-pointer z-20 range-thumb-accent"
+                    />
+                    <input
+                      type="range"
+                      min={absMin}
+                      max={absMax}
+                      value={maxAmount || absMax}
+                      onChange={(e) => {
+                        const val = Math.max(
+                          parseFloat(e.target.value),
+                          parseFloat(minAmount) || absMin,
+                        );
+                        setMaxAmount(val.toString());
+                      }}
+                      className="absolute inset-0 w-full h-full appearance-none bg-transparent pointer-events-auto cursor-pointer z-20 range-thumb-accent"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="h-px bg-white/5 mx-2 my-2" />
+
+              <div className="space-y-4 pt-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs text-muted font-bold uppercase tracking-widest ml-1 opacity-60">
+                    Date Range
+                  </label>
+                  {(startDate !== "" || endDate !== "") && (
+                    <button
+                      onClick={() => {
+                        setStartDate("");
+                        setEndDate("");
+                      }}
+                      className="text-[10px] text-accent/60 hover:text-accent font-bold uppercase tracking-wider transition-colors"
+                    >
+                      Clear Dates
+                    </button>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="relative group">
+                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted text-[9px] font-bold uppercase tracking-widest pointer-events-none group-focus-within:text-accent/70 transition-colors opacity-60">
+                      FROM
+                    </div>
+                    <input
+                      type="date"
+                      value={startDate}
+                      onChange={(e) => setStartDate(e.target.value)}
+                      className="w-full bg-bg-card/50 border border-bg-border rounded-2xl py-3 pl-14 pr-4 text-xs font-bold text-bright transition-all"
+                    />
+                  </div>
+                  <div className="relative group">
+                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted text-[9px] font-bold uppercase tracking-widest pointer-events-none group-focus-within:text-accent/70 transition-colors opacity-60">
+                      TO
+                    </div>
+                    <input
+                      type="date"
+                      value={endDate}
+                      onChange={(e) => setEndDate(e.target.value)}
+                      className="w-full bg-bg-card/50 border border-bg-border rounded-2xl py-3 pl-14 pr-4 text-xs font-bold text-bright transition-all"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="h-px bg-white/5 mx-2 my-2" />
+
+              {type !== "all" && (
+                <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                  <div className="space-y-2">
+                    <label className="text-[10px] text-muted font-bold uppercase tracking-[0.2em] ml-1 opacity-60">
+                      Preset Categories
+                    </label>
+                    <div className="flex flex-wrap gap-2">
                       <button
-                        key={t}
-                        onClick={() => {
-                          setType(t);
-                          setSelectedCategories([]);
-                        }}
-                        className={`relative flex-1 py-1.5 text-xs font-bold uppercase tracking-wider rounded-full z-10 transition-colors ${
-                          type === t
-                            ? "text-accent"
-                            : "text-muted hover:text-bright"
+                        onClick={() => setSelectedCategories([])}
+                        className={`px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider transition-all border ${
+                          selectedCategories.length === 0
+                            ? "bg-accent/20 text-accent border-accent/40 shadow-[0_0_15px_rgba(255,0,55,0.2)]"
+                            : "bg-bg-card/30 text-muted border-bg-border hover:bg-bg-card/50 hover:text-bright"
                         }`}
                       >
-                        {type === t && (
-                          <motion.div
-                            layoutId="filter-type-highlight"
-                            className="absolute inset-0 bg-accent/20 border border-accent/20 rounded-full z-[-1]"
-                            transition={{
-                              type: "spring",
-                              stiffness: 400,
-                              damping: 30,
-                            }}
-                          />
-                        )}
-                        {t}
+                        All {type}s
                       </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Amount Range */}
-                <div className="space-y-4 pt-2">
-                  <div className="flex items-center justify-between">
-                    <label className="text-xs text-muted font-bold uppercase tracking-widest ml-1 opacity-60">
-                      Amount Range ({currencySymbol})
-                    </label>
-                    {(minAmount !== "" || maxAmount !== "") && (
-                      <button
-                        onClick={() => {
-                          setMinAmount("");
-                          setMaxAmount("");
-                        }}
-                        className="text-[10px] text-accent/60 hover:text-accent font-bold uppercase tracking-wider transition-colors"
-                      >
-                        Clear Range
-                      </button>
-                    )}
-                  </div>
-
-                  {/* Amount Inputs */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="relative">
-                      <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted text-[9px] font-bold uppercase tracking-widest pointer-events-none opacity-60">
-                        MIN
-                      </div>
-                      <input
-                        type="number"
-                        placeholder={absMin.toString()}
-                        value={minAmount}
-                        onChange={(e) => setMinAmount(e.target.value)}
-                        className="w-full bg-bg-card/50 border border-bg-border rounded-2xl py-3 pl-14 pr-4 text-xs font-bold text-bright placeholder:text-muted/40 focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/40 transition-all"
-                      />
-                    </div>
-                    <div className="relative">
-                      <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted text-[9px] font-bold uppercase tracking-widest pointer-events-none opacity-60">
-                        MAX
-                      </div>
-                      <input
-                        type="number"
-                        placeholder={absMax.toString()}
-                        value={maxAmount}
-                        onChange={(e) => setMaxAmount(e.target.value)}
-                        className="w-full bg-bg-card/50 border border-bg-border rounded-2xl py-3 pl-14 pr-4 text-xs font-bold text-bright placeholder:text-muted/40 focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/40 transition-all"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Dual-Range Slider */}
-                  <div className="px-2 pt-2 pb-4">
-                    <div className="relative h-2 bg-bg-card/50 rounded-full border border-bg-border">
-                      {/* Active Range Highlight */}
-                      <div
-                        className="absolute h-full bg-accent/30 rounded-full"
-                        style={{
-                          left: `${Math.max(0, Math.min(100, ((parseFloat(minAmount) || absMin) - absMin) / (absMax - absMin || 1) * 100))}%`,
-                          right: `${100 - Math.max(0, Math.min(100, ((parseFloat(maxAmount) || absMax) - absMin) / (absMax - absMin || 1) * 100))}%`,
-                        }}
-                      />
-                      {/* Range Inputs */}
-                      <input
-                        type="range"
-                        min={absMin}
-                        max={absMax}
-                        value={minAmount || absMin}
-                        onChange={(e) => {
-                          const val = Math.min(
-                            parseFloat(e.target.value),
-                            parseFloat(maxAmount) || absMax,
-                          );
-                          setMinAmount(val.toString());
-                        }}
-                        className="absolute inset-0 w-full h-full appearance-none bg-transparent pointer-events-auto cursor-pointer z-20 range-thumb-accent"
-                      />
-                      <input
-                        type="range"
-                        min={absMin}
-                        max={absMax}
-                        value={maxAmount || absMax}
-                        onChange={(e) => {
-                          const val = Math.max(
-                            parseFloat(e.target.value),
-                            parseFloat(minAmount) || absMin,
-                          );
-                          setMaxAmount(val.toString());
-                        }}
-                        className="absolute inset-0 w-full h-full appearance-none bg-transparent pointer-events-auto cursor-pointer z-20 range-thumb-accent"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="h-px bg-white/5 mx-2 my-2" />
-
-                {/* Date Range */}
-                <div className="space-y-4 pt-2">
-                  <div className="flex items-center justify-between">
-                    <label className="text-xs text-muted font-bold uppercase tracking-widest ml-1 opacity-60">
-                      Date Range
-                    </label>
-                    {(startDate !== "" || endDate !== "") && (
-                      <button
-                        onClick={() => {
-                          setStartDate("");
-                          setEndDate("");
-                        }}
-                        className="text-[10px] text-accent/60 hover:text-accent font-bold uppercase tracking-wider transition-colors"
-                      >
-                        Clear Dates
-                      </button>
-                    )}
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="relative group">
-                      <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted text-[9px] font-bold uppercase tracking-widest pointer-events-none group-focus-within:text-accent/70 transition-colors opacity-60">
-                        FROM
-                      </div>
-                      <input
-                        type="date"
-                        value={startDate}
-                        onChange={(e) => setStartDate(e.target.value)}
-                        className="w-full bg-bg-card/50 border border-bg-border rounded-2xl py-3 pl-14 pr-4 text-xs font-bold text-bright transition-all"
-                      />
-                    </div>
-                    <div className="relative group">
-                      <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted text-[9px] font-bold uppercase tracking-widest pointer-events-none group-focus-within:text-accent/70 transition-colors opacity-60">
-                        TO
-                      </div>
-                      <input
-                        type="date"
-                        value={endDate}
-                        onChange={(e) => setEndDate(e.target.value)}
-                        className="w-full bg-bg-card/50 border border-bg-border rounded-2xl py-3 pl-14 pr-4 text-xs font-bold text-bright transition-all"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="h-px bg-white/5 mx-2 my-2" />
-
-                {/* Categories */}
-                {type !== "all" && (
-                  <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
-                    {/* Built-in Section */}
-                    <div className="space-y-2">
-                      <label className="text-[10px] text-muted font-bold uppercase tracking-[0.2em] ml-1 opacity-60">
-                        Preset Categories
-                      </label>
-                      <div className="flex flex-wrap gap-2">
+                      {(type === "expense"
+                        ? EXPENSE_CATEGORIES
+                        : INCOME_CATEGORIES
+                      ).map((cat) => (
                         <button
-                          onClick={() => setSelectedCategories([])}
+                          key={cat.id}
+                          onClick={() => toggleCategory(cat.id)}
                           className={`px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider transition-all border ${
-                            selectedCategories.length === 0
+                            selectedCategories.includes(cat.id)
                               ? "bg-accent/20 text-accent border-accent/40 shadow-[0_0_15px_rgba(255,0,55,0.2)]"
                               : "bg-bg-card/30 text-muted border-bg-border hover:bg-bg-card/50 hover:text-bright"
                           }`}
                         >
-                          All {type}s
+                          {cat.label}
                         </button>
-                        {(type === "expense"
-                          ? EXPENSE_CATEGORIES
-                          : INCOME_CATEGORIES
-                        ).map((cat) => (
+                      ))}
+                    </div>
+                  </div>
+
+                  {customCategories[type].length > 0 && (
+                    <div className="space-y-2">
+                      <label className="text-[10px] text-muted font-bold uppercase tracking-[0.2em] ml-1 opacity-60">
+                        Your Custom Categories
+                      </label>
+                      <div className="flex flex-wrap gap-2">
+                        {customCategories[type].map((cat) => (
                           <button
-                            key={cat.id}
-                            onClick={() => toggleCategory(cat.id)}
+                            key={cat}
+                            onClick={() => toggleCategory(cat)}
                             className={`px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider transition-all border ${
-                              selectedCategories.includes(cat.id)
+                              selectedCategories.includes(cat)
                                 ? "bg-accent/20 text-accent border-accent/40 shadow-[0_0_15px_rgba(255,0,55,0.2)]"
                                 : "bg-bg-card/30 text-muted border-bg-border hover:bg-bg-card/50 hover:text-bright"
                             }`}
                           >
-                            {cat.label}
+                            {cat}
                           </button>
                         ))}
                       </div>
                     </div>
+                  )}
+                </div>
+              )}
 
-                    {/* Custom Section */}
-                    {customCategories[type].length > 0 && (
-                      <div className="space-y-2">
-                        <label className="text-[10px] text-muted font-bold uppercase tracking-[0.2em] ml-1 opacity-60">
-                          Your Custom Categories
-                        </label>
-                        <div className="flex flex-wrap gap-2">
-                          {customCategories[type].map((cat) => (
-                            <button
-                              key={cat}
-                              onClick={() => toggleCategory(cat)}
-                              className={`px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider transition-all border ${
-                                selectedCategories.includes(cat)
-                                  ? "bg-accent/20 text-accent border-accent/40 shadow-[0_0_15px_rgba(255,0,55,0.2)]"
-                                  : "bg-bg-card/30 text-muted border-bg-border hover:bg-bg-card/50 hover:text-bright"
-                              }`}
-                            >
-                              {cat}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
+              {type === "all" && (
+                <div className="p-8 text-center glass-panel rounded-2xl border border-bg-border border-dashed">
+                  <p className="text-muted text-sm">
+                    Showing all transaction types and categories.
+                  </p>
+                </div>
+              )}
+            </div>
 
-                {type === "all" && (
-                  <div className="p-8 text-center glass-panel rounded-2xl border border-bg-border border-dashed">
-                    <p className="text-muted text-sm">
-                      Showing all transaction types and categories.
-                    </p>
-                  </div>
-                )}
-              </div>
-
-              {/* Footer */}
-              <div className="p-6 pt-2 shrink-0 border-t border-bg-border bg-bg-card/20 flex gap-3">
-                <button
-                  onClick={handleReset}
-                  className="flex-1 py-3 px-4 rounded-full text-xs font-bold uppercase tracking-widest text-muted hover:text-bright hover:bg-bg-card/30 transition-all"
-                >
-                  Reset All
-                </button>
-                <button
-                  onClick={handleApply}
-                  className="flex-[2] bg-accent hover:bg-accent-hover text-white font-bold py-3 px-6 rounded-full shadow-[0_0_20px_rgba(255,0,55,0.3)] transition-all transform hover:-translate-y-0.5 text-xs uppercase tracking-widest flex items-center justify-center gap-2"
-                >
-                  <Check className="w-4 h-4" />
-                  Apply Filters
-                </button>
-              </div>
-              </div>
+            <div className="p-6 pt-2 shrink-0 border-t border-bg-border bg-bg-card/20 flex gap-3">
+              <button
+                onClick={handleReset}
+                className="flex-1 py-3 px-4 rounded-full text-xs font-bold uppercase tracking-widest text-muted hover:text-bright hover:bg-bg-card/30 transition-all"
+              >
+                Reset All
+              </button>
+              <button
+                onClick={handleApply}
+                className="flex-[2] bg-accent hover:bg-accent-hover text-white font-bold py-3.5 px-6 rounded-full shadow-[0_0_20px_rgba(255,0,55,0.3)] transition-all transform hover:-translate-y-0.5 text-xs uppercase tracking-widest flex items-center justify-center gap-2"
+              >
+                <Check className="w-4 h-4" />
+                Apply Filters
+              </button>
+            </div>
+          </div>
         </motion.div>
       )}
-    </>
+    </>,
+    document.body,
   );
 };
