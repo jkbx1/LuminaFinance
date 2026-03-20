@@ -160,6 +160,25 @@ export const Dashboard: React.FC = () => {
     }
   }, [user, isGuest]);
 
+  const cleanTransactionForFirestore = (txData: Omit<Transaction, "id">) => {
+    const docData: any = {
+      title: txData.title,
+      amount: txData.amount,
+      type: txData.type,
+      category: txData.category,
+      currency: txData.currency || "USD",
+      date: txData.date,
+    };
+
+    if (txData.customIcon !== undefined) docData.customIcon = txData.customIcon;
+    if (txData.batchId !== undefined) docData.batchId = txData.batchId;
+    if (txData.batchName !== undefined) docData.batchName = txData.batchName;
+    if (txData.isBatchHeader !== undefined) docData.isBatchHeader = txData.isBatchHeader;
+    if (txData.counterparty !== undefined) docData.counterparty = txData.counterparty;
+
+    return docData;
+  };
+
   const saveGuestData = (newData: Transaction[]) => {
     localStorage.setItem("lumina_local_data", JSON.stringify(newData));
   };
@@ -167,12 +186,12 @@ export const Dashboard: React.FC = () => {
   const handleAddTransaction = async (txData: Omit<Transaction, "id">) => {
     if (user) {
       try {
-        await addDoc(collection(db, `users/${user.uid}/transactions`), {
-          ...txData,
-          date: txData.date, // user-picked Date object — Firestore converts it
-        });
-      } catch (_error) {
-        console.error("Error adding transaction: Failed to save to database.");
+        await addDoc(
+          collection(db, `users/${user.uid}/transactions`),
+          cleanTransactionForFirestore(txData)
+        );
+      } catch (error) {
+        console.error("Error adding transaction:", error);
       }
     } else if (isGuest) {
       const newTx: Transaction = {
@@ -191,20 +210,21 @@ export const Dashboard: React.FC = () => {
   const handleBatchAddTransactions = async (txsData: Omit<Transaction, "id">[]) => {
     if (user) {
       try {
-        const batch = writeBatch(db);
-        txsData.forEach((txData) => {
-          const newDocRef = doc(collection(db, `users/${user.uid}/transactions`));
-          batch.set(newDocRef, {
-            ...txData,
-            date: txData.date,
-            batchId: txData.batchId,
-            batchName: txData.batchName,
-            isBatchHeader: txData.isBatchHeader
+        // Firestore batch limit is 500 operations
+        const BATCH_LIMIT = 500;
+        for (let i = 0; i < txsData.length; i += BATCH_LIMIT) {
+          const chunk = txsData.slice(i, i + BATCH_LIMIT);
+          const batch = writeBatch(db);
+          
+          chunk.forEach((txData) => {
+            const newDocRef = doc(collection(db, `users/${user.uid}/transactions`));
+            batch.set(newDocRef, cleanTransactionForFirestore(txData));
           });
-        });
-        await batch.commit();
-      } catch (_error) {
-        console.error("Error batch adding transactions: Failed to save to database.");
+          
+          await batch.commit();
+        }
+      } catch (error) {
+        console.error("Error batch adding transactions:", error);
       }
     } else if (isGuest) {
       const newTxs: Transaction[] = txsData.map((txData) => ({
@@ -226,13 +246,12 @@ export const Dashboard: React.FC = () => {
   ) => {
     if (user) {
       try {
-        await updateDoc(doc(db, `users/${user.uid}/transactions`, id), {
-          ...txData,
-        });
-      } catch (error) {
-        console.error(
-          "Error updating transaction: Failed to update in database.",
+        await updateDoc(
+          doc(db, `users/${user.uid}/transactions`, id),
+          cleanTransactionForFirestore(txData)
         );
+      } catch (error) {
+        console.error("Error updating transaction:", error);
       }
     } else if (isGuest) {
       setTransactions((prev) => {

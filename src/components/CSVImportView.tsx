@@ -153,17 +153,19 @@ export const CSVImportView: React.FC<CSVImportViewProps> = ({
 
   const handleImport = () => {
     const batchId = crypto.randomUUID();
+    const batchName = file?.name || "Imported Batch";
     const defaultCurrency = localStorage.getItem("lumina_currency") ?? "USD";
 
     // 1. Create the Batch Header transaction (0.00)
     const headerTx: Omit<Transaction, "id"> = {
-      title: file?.name || "Imported Batch",
+      title: batchName,
       amount: 0,
       type: "income",
       category: "Import Session",
       currency: defaultCurrency,
       date: new Date(),
       batchId,
+      batchName,
       isBatchHeader: true
     };
 
@@ -174,7 +176,8 @@ export const CSVImportView: React.FC<CSVImportViewProps> = ({
         ...normalizedData.map(tx => ({
             ...tx,
             amount: tx.type === "expense" ? -Math.abs(tx.amount) : Math.abs(tx.amount),
-            batchId
+            batchId,
+            batchName
         }))
     ];
 
