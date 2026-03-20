@@ -126,6 +126,9 @@ export const Dashboard: React.FC = () => {
                 customIcon: data.customIcon,
                 currency: data.currency ?? "USD",
                 date: data.date?.toDate() || new Date(),
+                batchId: data.batchId,
+                batchName: data.batchName,
+                isBatchHeader: data.isBatchHeader
               });
             });
             setTransactions(txs);
@@ -185,6 +188,38 @@ export const Dashboard: React.FC = () => {
     }
   };
 
+  const handleBatchAddTransactions = async (txsData: Omit<Transaction, "id">[]) => {
+    if (user) {
+      try {
+        const batch = writeBatch(db);
+        txsData.forEach((txData) => {
+          const newDocRef = doc(collection(db, `users/${user.uid}/transactions`));
+          batch.set(newDocRef, {
+            ...txData,
+            date: txData.date,
+            batchId: txData.batchId,
+            batchName: txData.batchName,
+            isBatchHeader: txData.isBatchHeader
+          });
+        });
+        await batch.commit();
+      } catch (_error) {
+        console.error("Error batch adding transactions: Failed to save to database.");
+      }
+    } else if (isGuest) {
+      const newTxs: Transaction[] = txsData.map((txData) => ({
+        ...txData,
+        id: crypto.randomUUID(),
+      }));
+      setTransactions((prev) => {
+        const updated = [...newTxs, ...prev];
+        updated.sort((a, b) => b.date.getTime() - a.date.getTime());
+        saveGuestData(updated);
+        return updated;
+      });
+    }
+  };
+
   const handleEditTransaction = async (
     id: string,
     txData: Omit<Transaction, "id">,
@@ -212,10 +247,20 @@ export const Dashboard: React.FC = () => {
   };
 
   const handleDeleteTransaction = React.useCallback(
-    async (id: string) => {
+    async (id: string, batchId?: string) => {
       if (user) {
         try {
-          await deleteDoc(doc(db, `users/${user.uid}/transactions`, id));
+          if (batchId) {
+            // Delete all with this batchId
+            const batch = writeBatch(db);
+            const batchTxs = transactions.filter(tx => tx.batchId === batchId);
+            batchTxs.forEach(tx => {
+              batch.delete(doc(db, `users/${user.uid}/transactions`, tx.id));
+            });
+            await batch.commit();
+          } else {
+            await deleteDoc(doc(db, `users/${user.uid}/transactions`, id));
+          }
         } catch (error) {
           console.error(
             "Error deleting transaction: Failed to delete from database.",
@@ -223,13 +268,15 @@ export const Dashboard: React.FC = () => {
         }
       } else if (isGuest) {
         setTransactions((prev) => {
-          const updated = prev.filter((tx) => tx.id !== id);
+          const updated = batchId 
+            ? prev.filter((tx) => tx.batchId !== batchId)
+            : prev.filter((tx) => tx.id !== id);
           saveGuestData(updated);
           return updated;
         });
       }
     },
-    [user, isGuest],
+    [user, isGuest, transactions],
   );
 
   const handleLoginAndSync = async () => {
@@ -580,26 +627,19 @@ export const Dashboard: React.FC = () => {
                         </option>
                       </select>
                     </div>
-                    <div className="text-4xl font-bold text-bright mb-6 tracking-tight overflow-hidden">
-                      <AnimatePresence mode="wait">
-                        <motion.span
-                          key={`balance-all`}
-                          layout={false}
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: -10 }}
-                          transition={{ duration: 0.2, ease: "easeOut" }}
-                          className="block"
-                        >
-                          {currencySymbol(defaultCurrency)}{" "}
-                          {balance < 0 ? "-" : ""}
-                          {Math.abs(balance).toLocaleString(undefined, {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2,
-                          })}
-                        </motion.span>
-                      </AnimatePresence>
-                    </div>
+                          {(() => {
+                            const formatted = `${currencySymbol(defaultCurrency)} ${balance < 0 ? "-" : ""}${Math.abs(balance).toLocaleString(undefined, {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            })}`;
+                            const len = formatted.length;
+                            const fontSize = len > 14 ? "text-2xl" : len > 11 ? "text-3xl" : "text-4xl";
+                            return (
+                              <span className={`${fontSize} font-bold text-bright tracking-tight block whitespace-nowrap transition-all duration-300`}>
+                                {formatted}
+                              </span>
+                            );
+                          })()}
 
                     <div className="grid grid-cols-2 gap-4">
                       <div className="bg-bg-card/50 p-3 rounded-xl border border-bg-border overflow-hidden">
@@ -607,21 +647,19 @@ export const Dashboard: React.FC = () => {
                           Income
                         </div>
                         <AnimatePresence mode="wait">
-                          <motion.div
-                            key={`income-all-${defaultCurrency}`}
-                            layout={false}
-                            initial={{ opacity: 0, y: 8 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -8 }}
-                            transition={{ duration: 0.2, ease: "easeOut" }}
-                            className="text-lg font-bold text-bright"
-                          >
-                            {currencySymbol(defaultCurrency)}{" "}
-                            {income.toLocaleString(undefined, {
-                              minimumFractionDigits: 2,
-                              maximumFractionDigits: 2,
-                            })}
-                          </motion.div>
+                            {(() => {
+                              const formatted = `${currencySymbol(defaultCurrency)} ${income.toLocaleString(undefined, {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2,
+                              })}`;
+                              const len = formatted.length;
+                              const fontSize = len > 12 ? "text-[11px]" : len > 10 ? "text-xs" : len > 8 ? "text-sm" : "text-base";
+                              return (
+                                <div className={`${fontSize} font-bold text-bright whitespace-nowrap transition-all duration-300`}>
+                                  {formatted}
+                                </div>
+                              );
+                            })()}
                         </AnimatePresence>
                       </div>
                       <div className="bg-bg-card/50 p-3 rounded-xl border border-bg-border overflow-hidden">
@@ -629,21 +667,19 @@ export const Dashboard: React.FC = () => {
                           Expense
                         </div>
                         <AnimatePresence mode="wait">
-                          <motion.div
-                            key={`expense-all-${defaultCurrency}`}
-                            layout={false}
-                            initial={{ opacity: 0, y: 8 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -8 }}
-                            transition={{ duration: 0.2, ease: "easeOut" }}
-                            className="text-lg font-bold text-bright"
-                          >
-                            {currencySymbol(defaultCurrency)}{" "}
-                            {Math.abs(expense).toLocaleString(undefined, {
-                              minimumFractionDigits: 2,
-                              maximumFractionDigits: 2,
-                            })}
-                          </motion.div>
+                            {(() => {
+                              const formatted = `${currencySymbol(defaultCurrency)} ${Math.abs(expense).toLocaleString(undefined, {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2,
+                              })}`;
+                              const len = formatted.length;
+                              const fontSize = len > 12 ? "text-[11px]" : len > 10 ? "text-xs" : len > 8 ? "text-sm" : "text-base";
+                              return (
+                                <div className={`${fontSize} font-bold text-bright whitespace-nowrap transition-all duration-300`}>
+                                  {formatted}
+                                </div>
+                              );
+                            })()}
                         </AnimatePresence>
                       </div>
                     </div>
@@ -908,6 +944,7 @@ export const Dashboard: React.FC = () => {
           isOpen={isModalOpen}
           onClose={closeModal}
           onAdd={handleAddTransaction}
+          onBatchAdd={handleBatchAddTransactions}
           editingTransaction={editingTransaction}
           onEdit={handleEditTransaction}
           defaultDate={selectedCalendarDate || new Date()}

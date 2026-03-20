@@ -53,6 +53,10 @@ export interface Transaction {
   customIcon?: string; // name of the icon from CUSTOM_ICONS_MAP
   currency: string; // ISO code e.g. "USD", "EUR"
   date: Date;
+  counterparty?: string;
+  batchId?: string; // Links transactions from the same import
+  batchName?: string; // Original CSV filename
+  isBatchHeader?: boolean; // Marker for the session header
 }
 
 export const CUSTOM_ICONS_MAP: Record<string, React.FC<any>> = {
@@ -78,7 +82,7 @@ export const CUSTOM_ICONS_MAP: Record<string, React.FC<any>> = {
 interface ExpenseCardProps {
   transaction: Transaction;
   onEdit?: (transaction: Transaction, target?: HTMLElement) => void;
-  onDelete?: (id: string) => void;
+  onDelete?: (id: string, batchId?: string) => void;
   isEditing?: boolean;
   defaultCurrency?: string;
   convertToDefault?: (amount: number, from: string) => number;
@@ -118,6 +122,104 @@ const CategoryIcon = ({
   }
 };
 
+interface ScrollingTextProps {
+  text: string;
+  className?: string;
+  active?: boolean;
+  isTitle?: boolean;
+  isAmount?: boolean;
+  isExpanded?: boolean;
+}
+
+const ScrollingText: React.FC<ScrollingTextProps> = ({
+  text,
+  className,
+  active = false,
+  isTitle = false,
+  isAmount = false,
+  isExpanded = false,
+}) => {
+  const containerRef = React.useRef<HTMLDivElement>(null);
+  const textRef = React.useRef<HTMLSpanElement>(null);
+  const [shouldScroll, setShouldScroll] = useState(false);
+  const [scrollAmount, setScrollAmount] = useState(0);
+
+  // Dynamic font scaling logic
+  const getFontSize = () => {
+    const len = text.length;
+    if (isTitle) {
+      if (isExpanded) {
+        return len > 30 ? "text-base sm:text-lg" : len > 20 ? "text-lg sm:text-xl" : "text-xl sm:text-2xl";
+      }
+      return len > 25 ? "text-sm sm:text-base" : len > 18 ? "text-base" : "text-base sm:text-lg";
+    }
+    if (isAmount) {
+      if (isExpanded) {
+        return len > 16 ? "text-lg sm:text-xl" : len > 12 ? "text-xl sm:text-2xl" : "text-2xl sm:text-3xl";
+      }
+      return len > 14 ? "text-sm sm:text-base" : len > 10 ? "text-base sm:text-lg" : "text-lg sm:text-xl";
+    }
+    return "";
+  };
+
+  const fontSizeClass = getFontSize();
+
+  // Measure overflow after font size is applied
+  React.useEffect(() => {
+    const measure = () => {
+      if (containerRef.current && textRef.current) {
+        const containerWidth = containerRef.current.offsetWidth;
+        const textWidth = textRef.current.offsetWidth;
+        if (textWidth > containerWidth) {
+          setShouldScroll(true);
+          setScrollAmount(textWidth - containerWidth + 24); // 24px extra buffer
+        } else {
+          setShouldScroll(false);
+          setScrollAmount(0);
+        }
+      }
+    };
+    
+    // Slight timeout to ensure layout is stable
+    const timer = setTimeout(measure, 50);
+    window.addEventListener('resize', measure);
+    return () => {
+      window.removeEventListener('resize', measure);
+      clearTimeout(timer);
+    };
+  }, [text, fontSizeClass, isExpanded]);
+
+  return (
+    <div ref={containerRef} className={`overflow-hidden relative ${fontSizeClass} ${className}`}>
+      <motion.span
+        ref={textRef}
+        initial={{ x: 0 }}
+        animate={shouldScroll && active ? { x: [0, -scrollAmount, 0] } : { x: 0 }}
+        transition={active ? {
+          x: {
+            duration: Math.max(3, scrollAmount / 25),
+            ease: "linear",
+            repeat: Infinity,
+            repeatDelay: 1.5,
+          }
+        } : {
+          x: {
+            duration: 0.2, // Quick reset to start
+            ease: "easeOut"
+          }
+        }}
+        className="inline-block whitespace-nowrap"
+      >
+        {text}
+      </motion.span>
+      {/* Subtle fade effect on the right when it overflows but is not scrolling yet */}
+      {shouldScroll && !active && (
+        <div className="absolute top-0 right-0 h-full w-8 bg-gradient-to-l from-bg-card/40 to-transparent pointer-events-none" />
+      )}
+    </div>
+  );
+};
+
 // Rename base component to allow React.memo wrapping below
 const ExpenseCardComponent: React.FC<ExpenseCardProps> = ({
   transaction,
@@ -134,8 +236,7 @@ const ExpenseCardComponent: React.FC<ExpenseCardProps> = ({
   // Check if device supports hover (desktop) vs touch (mobile)
   const [isHoverable, setIsHoverable] = useState(true);
 
-  // Detect mobile Chrome synchronously — useMemo is correct on first render,
-  // avoiding the useEffect delay that could cause glitchy View Transitions
+  // Detect mobile Chrome synchronously
   const isMobileChrome = React.useMemo(() => {
     if (typeof window === "undefined") return false;
     const ua = window.navigator.userAgent || "";
@@ -188,17 +289,17 @@ const ExpenseCardComponent: React.FC<ExpenseCardProps> = ({
             key="confirm-pill"
             initial={{ opacity: 0, scale: 0.8, x: 10 }}
             animate={{ opacity: 1, scale: 1, x: 0 }}
-            className="flex items-center gap-2 bg-rose-500/10 p-1 pl-3 pr-1 rounded-full border border-rose-500/20 backdrop-blur-md"
+            className={`flex items-center gap-2 bg-rose-500/10 p-1 pl-3 pr-1 rounded-full border border-rose-500/20 backdrop-blur-md ${transaction.isBatchHeader ? "ring-2 ring-rose-500/30" : ""}`}
             onClick={(e) => e.stopPropagation()}
           >
-            <span className="text-xs text-rose-300 font-medium whitespace-nowrap">
-              Delete?
+            <span className="text-xs text-rose-300 font-bold whitespace-nowrap">
+              {transaction.isBatchHeader ? "Delete Batch?" : "Delete?"}
             </span>
             <button
-              onClick={() => onDelete?.(transaction.id)}
-              className="p-1 px-2 rounded-full bg-rose-500 hover:bg-rose-400 text-white text-xs font-bold transition-colors"
+              onClick={() => onDelete?.(transaction.id, transaction.isBatchHeader ? transaction.batchId : undefined)}
+              className="p-1 px-3 rounded-full bg-rose-500 hover:bg-rose-400 text-white text-[10px] font-black uppercase tracking-tight transition-colors shadow-lg shadow-rose-500/20"
             >
-              Yes
+              Confirm
             </button>
             <button
               onClick={(e) => {
@@ -231,42 +332,48 @@ const ExpenseCardComponent: React.FC<ExpenseCardProps> = ({
     );
   };
 
-  const renderAmounts = () => (
-    <motion.div
-      layoutId={isMobileChrome ? undefined : `amounts-${transaction.id}`}
-      className="flex flex-col items-end gap-0.5 shrink-0"
-      aria-label={`${isIncome ? "Income" : "Expense"} amount: ${currencySymbol(transaction.currency)}${Math.abs(transaction.amount).toFixed(2)}`}
-    >
-      <div className="flex items-center gap-1" aria-hidden="true">
-        {isIncome ? (
-          <ArrowUpRight className="w-4 h-4 text-emerald-400" />
-        ) : (
-          <ArrowDownRight className="w-4 h-4 text-rose-400" />
-        )}
-        <span
-          className={`font-semibold tracking-wide ${isIncome ? "text-emerald-400" : "text-bright"} ${isExpanded ? "text-xl sm:text-2xl" : "text-lg"}`}
-        >
-          {currencySymbol(transaction.currency)} {isIncome ? "+" : "-"}
-          {Math.abs(transaction.amount).toFixed(2)}
-        </span>
-      </div>
+  const renderAmounts = () => {
+    const primaryAmount = `${currencySymbol(transaction.currency)} ${isIncome ? "+" : "-"}${Math.abs(transaction.amount).toFixed(2)}`;
+    
+    return (
+      <motion.div
+        layoutId={isMobileChrome ? undefined : `amounts-${transaction.id}`}
+        className="flex flex-col items-end gap-0.5 min-w-0"
+        aria-label={`${isIncome ? "Income" : "Expense"} amount: ${primaryAmount}`}
+      >
+        <div className="flex items-center gap-1 w-full justify-end" aria-hidden="true">
+          {isIncome ? (
+            <ArrowUpRight className="w-4 h-4 text-emerald-400 shrink-0" />
+          ) : (
+            <ArrowDownRight className="w-4 h-4 text-rose-400 shrink-0" />
+          )}
+          <ScrollingText
+            active={isExpanded || isHovered}
+            text={primaryAmount}
+            isAmount={true}
+            isExpanded={isExpanded}
+            className={`font-semibold tracking-wide ${isIncome ? "text-emerald-400" : "text-bright"}`}
+          />
+        </div>
 
-      {/* Converted amount shown when transaction currency ≠ default */}
-      {convertToDefault &&
-        defaultCurrency &&
-        transaction.currency !== defaultCurrency && (
-          <div className="flex items-center gap-1 text-xs sm:text-sm text-muted" aria-label={`Converted to ${defaultCurrency}: ${currencySymbol(defaultCurrency)}${Math.abs(convertToDefault(transaction.amount, transaction.currency)).toFixed(2)}`}>
-            <span aria-hidden="true">→</span>
-            <span className={isIncome ? "text-emerald-600" : "text-muted"}>
-              {currencySymbol(defaultCurrency)} {isIncome ? "+" : "-"}
-              {Math.abs(
-                convertToDefault(transaction.amount, transaction.currency),
-              ).toFixed(2)}
-            </span>
-          </div>
-        )}
-    </motion.div>
-  );
+        {/* Converted amount shown when transaction currency ≠ default */}
+        {convertToDefault &&
+          defaultCurrency &&
+          transaction.currency !== defaultCurrency && (
+            <div className="flex items-center gap-1 text-xs sm:text-sm text-muted w-full justify-end" aria-label={`Converted to ${defaultCurrency}: ${currencySymbol(defaultCurrency)}${Math.abs(convertToDefault(transaction.amount, transaction.currency)).toFixed(2)}`}>
+              <span aria-hidden="true" className="shrink-0">→</span>
+              <ScrollingText
+                active={isExpanded || isHovered}
+                isAmount={true}
+                isExpanded={isExpanded}
+                text={`${currencySymbol(defaultCurrency)} ${isIncome ? "+" : "-"}${Math.abs(convertToDefault(transaction.amount, transaction.currency)).toFixed(2)}`}
+                className={isIncome ? "text-emerald-600" : "text-muted"}
+              />
+            </div>
+          )}
+      </motion.div>
+    );
+  };
 
   return (
     // Outer: layout wrapper only
@@ -312,7 +419,7 @@ const ExpenseCardComponent: React.FC<ExpenseCardProps> = ({
               initial={false}
               animate={{ opacity: isEditing ? 0 : 1 }}
               transition={{ delay: 0.1, duration: 0.2 }}
-              className={`relative z-10 flex ${isExpanded ? "flex-col p-4 sm:p-5 gap-3 sm:gap-4" : "items-center justify-between p-3 sm:p-4 gap-2 sm:gap-4"}`}
+              className={`relative z-10 flex ${isExpanded ? "flex-col p-4 sm:p-5 gap-3 sm:gap-4" : "items-center p-3 sm:p-4 gap-4"}`}
             >
               {isExpanded ? (
                 // --- EXPANDED VIEW ---
@@ -335,9 +442,14 @@ const ExpenseCardComponent: React.FC<ExpenseCardProps> = ({
                           layoutId={
                             isMobileChrome ? undefined : `title-${transaction.id}`
                           }
-                          className="text-bright font-semibold text-lg sm:text-xl break-words leading-tight"
+                          className="text-bright font-semibold leading-tight"
                         >
-                          {transaction.title}
+                          <ScrollingText 
+                             text={transaction.title}
+                             active={true} // In expanded view, always allow scroll if needed
+                             isTitle={true}
+                             isExpanded={true}
+                          />
                         </motion.h3>
                         <motion.div
                           layoutId={
@@ -356,7 +468,7 @@ const ExpenseCardComponent: React.FC<ExpenseCardProps> = ({
                         </motion.div>
                       </div>
                     </div>
-                    <div className="shrink-0 mt-1">{renderAmounts()}</div>
+                    <div className="shrink-0 mt-1 max-w-[40%]">{renderAmounts()}</div>
                   </div>
 
                   <div className="flex justify-between items-end w-full mt-1 pt-3 sm:pt-4 border-t border-bg-border">
@@ -380,7 +492,7 @@ const ExpenseCardComponent: React.FC<ExpenseCardProps> = ({
               ) : (
                 // --- COMPACT VIEW ---
                 <>
-                  <div className="flex items-center gap-2 sm:gap-4 flex-1 min-w-0">
+                  <div className="flex items-center gap-3 sm:gap-4 flex-[1.5] min-w-0">
                     <motion.div
                       layoutId={
                         isMobileChrome ? undefined : `icon-${transaction.id}`
@@ -397,9 +509,14 @@ const ExpenseCardComponent: React.FC<ExpenseCardProps> = ({
                         layoutId={
                           isMobileChrome ? undefined : `title-${transaction.id}`
                         }
-                        className="text-bright font-medium text-base sm:text-lg overflow-hidden text-ellipsis whitespace-nowrap"
+                        className="text-bright font-medium"
                       >
-                        {transaction.title}
+                        <ScrollingText 
+                          text={transaction.title} 
+                          active={isHovered}
+                          isTitle={true}
+                          isExpanded={false}
+                        />
                       </motion.h3>
                       <motion.p
                         layoutId={
@@ -415,10 +532,13 @@ const ExpenseCardComponent: React.FC<ExpenseCardProps> = ({
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
-                    {/* On compact view, totally remove actions from DOM on mobile to avoid wasting width */}
-                    {renderActions()}
-                    {renderAmounts()}
+                  <div className="flex items-center gap-1.5 sm:gap-3 flex-1 justify-end min-w-0">
+                    <div className="hidden sm:flex shrink-0">
+                      {renderActions()}
+                    </div>
+                    <div className="min-w-0 text-right">
+                       {renderAmounts()}
+                    </div>
                   </div>
                 </>
               )}

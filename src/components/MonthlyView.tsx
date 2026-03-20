@@ -10,7 +10,7 @@ import { FilterModal } from "./FilterModal";
 interface MonthlyViewProps {
   transactions: Transaction[];
   onEdit: (tx: Transaction, target?: HTMLElement) => void;
-  onDelete: (id: string) => void;
+  onDelete: (id: string, batchId?: string) => void;
   editingTransactionId?: string | null;
   isModalOpen?: boolean;
   defaultCurrency: string;

@@ -2,6 +2,7 @@ import React, { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Tag, Calendar, Plus, Check, Edit2 } from "lucide-react";
 import { type Transaction, CUSTOM_ICONS_MAP } from "./ExpenseCard";
+import { CSVImportView } from "./CSVImportView";
 
 // ─── Currency Options ────────────────────────────────────────────────────────
 const CURRENCIES = [
@@ -44,6 +45,7 @@ interface AddExpenseModalProps {
   isOpen: boolean;
   onClose: () => void;
   onAdd: (transaction: Omit<Transaction, "id">) => void;
+  onBatchAdd?: (transactions: Omit<Transaction, "id">[]) => void;
   editingTransaction?: Transaction | null;
   onEdit?: (id: string, transaction: Omit<Transaction, "id">) => void;
   defaultDate?: Date;
@@ -54,10 +56,12 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
   isOpen,
   onClose,
   onAdd,
+  onBatchAdd,
   editingTransaction,
   onEdit,
   defaultDate,
 }) => {
+  const [activeTab, setActiveTab] = useState<"manual" | "import">("manual");
   const [title, setTitle] = useState("");
   const [amount, setAmount] = useState("");
   const [type, setType] = useState<"income" | "expense">("expense");
@@ -105,6 +109,9 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
     }
     setShowCustomInput(false);
     setCustomCategoryDraft("");
+    if (isOpen) {
+      setActiveTab("manual");
+    }
   }, [isOpen, editingTransaction, defaultDate]);
 
   // Ensure category resets to a valid default when switching type
@@ -191,7 +198,7 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={modalTransition}
-            className="fixed inset-0 z-40 bg-black/60 backdrop-blur-md"
+            className="fixed inset-0 z-50 bg-black/60 backdrop-blur-md"
             onClick={onClose}
           />
         )}
@@ -205,7 +212,7 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={modalTransition}
-          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 pointer-events-none pb-safe"
+          className="fixed inset-0 z-60 flex items-center justify-center p-3 sm:p-6 pointer-events-none pb-safe"
         >
             <div
               className="relative w-full max-w-md flex flex-col pointer-events-auto glass-panel shadow-2xl border border-glass-border rounded-3xl"
@@ -235,11 +242,69 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
                 </button>
               </div>
 
+              {!editingTransaction && (
+                <div className="flex px-5 sm:px-8 pb-4 shrink-0">
+                  <div className="flex bg-bg-card/30 p-1 rounded-full border border-bg-border backdrop-blur-sm w-full relative">
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab("manual")}
+                      className={`relative flex-1 py-1.5 text-xs font-bold rounded-full z-10 transition-colors ${
+                        activeTab === "manual"
+                          ? "text-bright"
+                          : "text-muted hover:text-bright"
+                      }`}
+                    >
+                      {activeTab === "manual" && (
+                        <motion.div
+                          layoutId="active-tab-highlight"
+                          className="absolute inset-0 bg-accent/20 border border-accent/20 rounded-full z-[-1]"
+                          transition={{
+                            type: "spring",
+                            stiffness: 400,
+                            damping: 30,
+                          }}
+                        />
+                      )}
+                      Manual Entry
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab("import")}
+                      className={`relative flex-1 py-1.5 text-xs font-bold rounded-full z-10 transition-colors ${
+                        activeTab === "import"
+                          ? "text-bright"
+                          : "text-muted hover:text-bright"
+                      }`}
+                    >
+                      {activeTab === "import" && (
+                        <motion.div
+                          layoutId="active-tab-highlight"
+                          className="absolute inset-0 bg-accent/20 border border-accent/20 rounded-full z-[-1]"
+                          transition={{
+                            type: "spring",
+                            stiffness: 400,
+                            damping: 30,
+                          }}
+                        />
+                      )}
+                      Local CSV Import
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {/* Body and Footer Form Wrapper */}
-              <form
-                onSubmit={handleSubmit}
-                className="flex flex-col flex-1 min-h-0 relative z-10 w-full"
-              >
+              <AnimatePresence mode="wait">
+                {activeTab === "manual" ? (
+                  <motion.form
+                    key="manual-form"
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: 10 }}
+                    transition={{ duration: 0.2 }}
+                    onSubmit={handleSubmit}
+                    className="flex flex-col flex-1 min-h-0 relative z-10 w-full"
+                  >
                 {/* Scrollable Form Fields with Fade Mask */}
                 <div
                   className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-5 sm:px-8 py-6 space-y-3 sm:y-5 w-full max-w-[320px] mx-auto sm:max-w-none scrollbar-thin scrollbar-thumb-bg-border scrollbar-track-transparent"
@@ -569,9 +634,20 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
                     className="w-full bg-accent hover:bg-accent-hover text-white font-bold py-3.5 px-6 rounded-full shadow-[0_0_20px_rgba(255,0,55,0.3)] transition-all duration-300 hover:shadow-[0_0_30px_rgba(255,0,55,0.5)] transform hover:-translate-y-0.5 text-base uppercase tracking-wide"
                   >
                     {editingTransaction ? "Save Changes" : "Save Transaction"}
-                  </button>
-                </div>
-              </form>
+                    </button>
+                  </div>
+                </motion.form>
+              ) : (
+                <CSVImportView
+                  key="import-view"
+                  onBatchAdd={(txs) => {
+                    onBatchAdd?.(txs);
+                    onClose();
+                  }}
+                  onCancel={() => setActiveTab("manual")}
+                />
+              )}
+            </AnimatePresence>
             </div>
             </div>
           </motion.div>

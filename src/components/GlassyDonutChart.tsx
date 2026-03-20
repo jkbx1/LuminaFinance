@@ -129,16 +129,22 @@ export const GlassyDonutChart: React.FC<GlassyDonutChartProps> = ({
 
       {/* Center Text */}
       <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-        <span className="text-muted text-sm tracking-wider uppercase">
+        <span className="text-muted text-[10px] font-bold tracking-widest uppercase opacity-60">
           {totalText || "Total"}
         </span>
-        <span className="text-3xl font-bold tracking-tight text-bright mt-1">
-          {currencySymbol}{" "}
-          {total.toLocaleString(undefined, {
+        {(() => {
+          const formatted = `${currencySymbol} ${total.toLocaleString(undefined, {
             minimumFractionDigits: 2,
             maximumFractionDigits: 2,
-          })}
-        </span>
+          })}`;
+          const len = formatted.length;
+          const fontSize = len > 16 ? "text-lg" : len > 13 ? "text-xl" : len > 10 ? "text-2xl" : "text-3xl";
+          return (
+            <span className={`${fontSize} font-black tracking-tight text-bright mt-1 whitespace-nowrap transition-all duration-300`}>
+              {formatted}
+            </span>
+          );
+        })()}
       </div>
     </div>
   );

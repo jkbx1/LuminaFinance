@@ -49,12 +49,12 @@ export const FloatingNavbar: React.FC<FloatingNavbarProps> = ({
   }, [lastScrollY]);
 
   return (
-    <div className="fixed top-0 left-0 right-0 z-30 px-4 md:px-6 pointer-events-none overflow-hidden">
+    <div className="fixed top-0 left-0 right-0 z-40 px-4 md:px-6 pointer-events-none overflow-hidden">
       <motion.nav
         initial={{ top: -100 }}
         animate={{ top: isVisible ? 24 : -120 }}
         transition={{ duration: 0.5, ease: "easeOut" }}
-        className="fixed left-4 right-4 md:left-6 md:right-6 z-30 pointer-events-auto"
+        className="fixed left-4 right-4 md:left-6 md:right-6 z-40 pointer-events-auto"
       >
         <div className="max-w-7xl mx-auto w-full">
         {/* Glass layer: no opacity animation so backdrop-filter stays visible during enter/leave */}

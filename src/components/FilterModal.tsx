@@ -208,7 +208,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={modalTransition}
-            className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-md"
+            className="fixed inset-0 z-50 bg-black/60 backdrop-blur-md"
             style={{ top: 0, left: 0, width: "100vw", height: "100vh" }}
             onClick={onClose}
           />
@@ -221,7 +221,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={modalTransition}
-          className="fixed inset-0 z-[10000] flex items-center justify-center p-3 sm:p-6 pointer-events-none pb-safe"
+          className="fixed inset-0 z-60 flex items-center justify-center p-3 sm:p-6 pointer-events-none pb-safe"
         >
           <div
             className="relative w-full max-w-md flex flex-col pointer-events-auto glass-panel shadow-2xl border border-glass-border rounded-3xl"
