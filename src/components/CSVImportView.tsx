@@ -95,7 +95,17 @@ export const CSVImportView: React.FC<CSVImportViewProps> = ({
     const newMapping = { date: -1, amount: -1, description: -1, category: -1, currency: -1 };
     headers.forEach((h, idx) => {
       const header = String(h).toLowerCase();
-      if (header.includes("dat")) newMapping.date = idx;
+      
+      // Date mapping - prioritize 'operacji' or 'date' over 'księgowania' or 'valuta'
+      if (header.includes("dat")) {
+          const isPreferable = header.includes("operac") || header.includes("trans") || header.includes("date");
+          const isAvoidable = header.includes("księg") || header.includes("post") || header.includes("valut");
+          
+          if (newMapping.date === -1 || (isPreferable && !isAvoidable)) {
+              newMapping.date = idx;
+          }
+      }
+      
       if (header.includes("kwot") || header.includes("amoun")) newMapping.amount = idx;
       if (header.includes("opis") || header.includes("desc") || header.includes("tytu") || header.includes("counterp") || header.includes("odbiorc")) {
           newMapping.description = idx;
@@ -109,21 +119,32 @@ export const CSVImportView: React.FC<CSVImportViewProps> = ({
   const normalizedData = useMemo(() => {
     if (headerIndex === -1 || step !== "confirm") return [];
     const rowsToProcess = csvData.slice(headerIndex + 1);
-    const defaultCurrency = localStorage.getItem("lumina_currency") ?? "USD";
+    const defaultCurrency = localStorage.getItem("lumina_default_currency") ?? "USD";
 
     return rowsToProcess
       .map(row => {
           // ... existing mapping logic ...
-          const dateVal = row[mapping.date];
+          const dateVal = String(row[mapping.date] || "").trim();
           const amountVal = String(row[mapping.amount] || "0");
           const descVal = row[mapping.description] || "Imported Transaction";
           const catVal = mapping.category !== -1 ? row[mapping.category] : "Imported";
           const currVal = mapping.currency !== -1 ? String(row[mapping.currency]).toUpperCase() : defaultCurrency;
 
           let date = new Date(dateVal);
-          if (isNaN(date.getTime())) {
-              const dmy = String(dateVal).match(/(\d{2})[.-](\d{2})[.-](\d{4})/);
-              if (dmy) date = new Date(`${dmy[3]}-${dmy[2]}-${dmy[1]}`);
+          
+          // Improved parsing for common Polish/European formats
+          if (isNaN(date.getTime()) || dateVal.includes('.') || dateVal.includes('-')) {
+              // Try DD.MM.YYYY or DD-MM-YYYY
+              const dmy = dateVal.match(/^(\d{1,2})[.-](\d{1,2})[.-](\d{4})$/);
+              if (dmy) {
+                  date = new Date(parseInt(dmy[3]), parseInt(dmy[2]) - 1, parseInt(dmy[1]));
+              } else {
+                  // Try YYYY.MM.DD or YYYY-MM-DD
+                  const ymd = dateVal.match(/^(\d{4})[.-](\d{1,2})[.-](\d{1,2})/);
+                  if (ymd) {
+                      date = new Date(parseInt(ymd[1]), parseInt(ymd[2]) - 1, parseInt(ymd[3]));
+                  }
+              }
           }
 
           const cleanAmount = amountVal.replace(/[^\d,.+-]/g, '').replace(',', '.');
