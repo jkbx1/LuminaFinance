@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { createPortal } from "react-dom";
-import { X, Filter, Check } from "lucide-react";
+import { X, Filter, Check, Search } from "lucide-react";
 import { type Transaction } from "./ExpenseCard";
 
 // Matches AddExpenseModal categories
@@ -31,6 +31,7 @@ interface FilterModalProps {
   currentMaxAmount: number | null;
   currentStartDate: string;
   currentEndDate: string;
+  currentSearch: string;
   onApply: (filters: {
     type: "all" | "expense" | "income";
     categories: string[];
@@ -38,6 +39,7 @@ interface FilterModalProps {
     maxAmount: number | null;
     startDate: string;
     endDate: string;
+    search: string;
   }) => void;
   convertToDefault: (amount: number, from: string) => number;
   currencySymbol: string;
@@ -56,6 +58,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({
   onApply,
   convertToDefault,
   currencySymbol,
+  currentSearch,
 }) => {
   const [type, setType] = useState<"all" | "expense" | "income">(currentType);
   const [selectedCategories, setSelectedCategories] =
@@ -68,6 +71,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({
   );
   const [startDate, setStartDate] = useState<string>(currentStartDate);
   const [endDate, setEndDate] = useState<string>(currentEndDate);
+  const [search, setSearch] = useState<string>(currentSearch);
 
   // Detect mobile Chrome synchronously — useMemo is correct on first render,
   // avoiding the useEffect delay that caused glitchy animations on mobile Chrome
@@ -91,8 +95,9 @@ export const FilterModal: React.FC<FilterModalProps> = ({
       setMaxAmount(currentMaxAmount?.toString() || "");
       setStartDate(currentStartDate);
       setEndDate(currentEndDate);
+      setSearch(currentSearch);
     }
-  }, [isOpen, currentType, currentCategories, currentMinAmount, currentMaxAmount, currentStartDate, currentEndDate]);
+  }, [isOpen, currentType, currentCategories, currentMinAmount, currentMaxAmount, currentStartDate, currentEndDate, currentSearch]);
 
   // Detect custom categories used in transactions
   const customCategories = useMemo(() => {
@@ -172,6 +177,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({
       maxAmount: maxAmount === "" ? null : parseFloat(maxAmount),
       startDate,
       endDate,
+      search,
     });
     onClose();
   };
@@ -183,6 +189,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({
     setMaxAmount("");
     setStartDate("");
     setEndDate("");
+    setSearch("");
     onApply({
       type: "all",
       categories: [],
@@ -190,6 +197,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({
       maxAmount: null,
       startDate: "",
       endDate: "",
+      search: "",
     });
     onClose();
   };
@@ -231,7 +239,6 @@ export const FilterModal: React.FC<FilterModalProps> = ({
               viewTransitionName: !isMobileChrome ? "modal-morph" : undefined,
             }}
           >
-            <div className="absolute top-0 right-0 w-64 h-64 bg-accent/10 rounded-full blur-[60px] pointer-events-none -translate-y-1/2 translate-x-1/2" />
 
             <div className="flex items-center justify-between p-6 pb-2 shrink-0 relative z-10">
               <div className="flex items-center gap-2">
@@ -256,6 +263,32 @@ export const FilterModal: React.FC<FilterModalProps> = ({
                   "linear-gradient(to bottom, transparent 0px, black 24px, black calc(100% - 24px), transparent 100%)",
               }}
             >
+              <div className="space-y-3">
+                <label className="text-xs text-muted font-bold uppercase tracking-widest ml-1 opacity-60">
+                  Search by name
+                </label>
+                <div className="relative group">
+                  <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted group-focus-within:text-accent transition-colors">
+                    <Search className="w-4 h-4" />
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="E.g. Groceries, Netflix..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="w-full bg-bg-card/50 border border-bg-border rounded-2xl py-3 pl-12 pr-4 text-sm font-medium text-bright placeholder:text-muted/40 focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/40 transition-all font-sans"
+                  />
+                  {search && (
+                    <button
+                      onClick={() => setSearch("")}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-muted hover:text-bright p-1"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+              </div>
+
               <div className="space-y-3">
                 <label className="text-xs text-muted font-bold uppercase tracking-widest ml-1 opacity-60">
                   Transaction Type
@@ -293,7 +326,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({
 
               <div className="space-y-4 pt-2">
                 <div className="flex items-center justify-between">
-                  <label className="text-xs text-muted font-bold uppercase tracking-widest ml-1 opacity-60">
+                  <label className="text-xs text-muted font-bold uppercase tracking-widest ml-1 opacity-60" translate="no">
                     Amount Range ({currencySymbol})
                   </label>
                   {(minAmount !== "" || maxAmount !== "") && (
@@ -320,6 +353,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({
                       value={minAmount}
                       onChange={(e) => setMinAmount(e.target.value)}
                       className="w-full bg-bg-card/50 border border-bg-border rounded-2xl py-3 pl-14 pr-4 text-xs font-bold text-bright placeholder:text-muted/40 focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/40 transition-all"
+                      translate="no"
                     />
                   </div>
                   <div className="relative">
@@ -332,6 +366,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({
                       value={maxAmount}
                       onChange={(e) => setMaxAmount(e.target.value)}
                       className="w-full bg-bg-card/50 border border-bg-border rounded-2xl py-3 pl-14 pr-4 text-xs font-bold text-bright placeholder:text-muted/40 focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/40 transition-all"
+                      translate="no"
                     />
                   </div>
                 </div>

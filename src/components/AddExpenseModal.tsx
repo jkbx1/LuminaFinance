@@ -2,6 +2,7 @@ import React, { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Tag, Calendar, Plus, Check, Edit2 } from "lucide-react";
 import { type Transaction, CUSTOM_ICONS_MAP } from "./ExpenseCard";
+import { getSavedCategoryIcon, saveCategoryIcon } from "../lib/utils";
 import { CSVImportView } from "./CSVImportView";
 
 // ─── Currency Options ────────────────────────────────────────────────────────
@@ -19,6 +20,7 @@ const EXPENSE_CATEGORIES = [
   { id: "food", label: "Food & Drink" },
   { id: "shopping", label: "Shopping" },
   { id: "housing", label: "Housing" },
+  { id: "transport", label: "Transportation" },
   { id: "utilities", label: "Utilities" },
   { id: "other", label: "Other" },
 ];
@@ -28,6 +30,7 @@ const INCOME_CATEGORIES = [
   { id: "freelance", label: "Freelance" },
   { id: "investment", label: "Investment" },
   { id: "gift", label: "Gift" },
+  { id: "family", label: "Family" },
   { id: "other", label: "Other" },
 ];
 
@@ -49,6 +52,8 @@ interface AddExpenseModalProps {
   editingTransaction?: Transaction | null;
   onEdit?: (id: string, transaction: Omit<Transaction, "id">) => void;
   defaultDate?: Date;
+  defaultCurrency: string;
+  transactions?: Transaction[];
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -60,6 +65,8 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
   editingTransaction,
   onEdit,
   defaultDate,
+  defaultCurrency,
+  transactions = [],
 }) => {
   const [activeTab, setActiveTab] = useState<"manual" | "import">("manual");
   const [title, setTitle] = useState("");
@@ -103,9 +110,12 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
       setAmount("");
       setType("expense");
       setCategory("food");
-      setCustomIcon("Monitor");
       setCurrency(getStoredCurrency());
       setDateStr(toDatetimeLocal(defaultDate || new Date()));
+      
+      // Auto-load icon for default category if custom
+      const savedIcon = getSavedCategoryIcon(category);
+      if (savedIcon) setCustomIcon(savedIcon);
     }
     setShowCustomInput(false);
     setCustomCategoryDraft("");
@@ -113,6 +123,20 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
       setActiveTab("manual");
     }
   }, [isOpen, editingTransaction, defaultDate]);
+
+  // Derived custom categories for the current type
+  const customCategories = React.useMemo(() => {
+    const set = new Set<string>();
+    const builtInIds = (type === "expense" ? EXPENSE_CATEGORIES : INCOME_CATEGORIES).map(c => c.id);
+    
+    transactions.forEach(tx => {
+      if (tx.type === type && !builtInIds.includes(tx.category)) {
+        set.add(tx.category.toLowerCase());
+      }
+    });
+    
+    return Array.from(set).sort();
+  }, [transactions, type]);
 
   // Ensure category resets to a valid default when switching type
   const handleTypeChange = (newType: "income" | "expense") => {
@@ -132,6 +156,10 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
     setCategory(val.toLowerCase());
     setShowCustomInput(false);
     setCustomCategoryDraft("");
+    
+    // Auto-load saved icon for the new custom category
+    const savedIcon = getSavedCategoryIcon(val);
+    if (savedIcon) setCustomIcon(savedIcon);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -226,7 +254,6 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
               }}
             >
             <div className="relative z-10 w-full flex-1 min-h-0 flex flex-col items-stretch h-full max-h-[95dvh]">
-                <div className="absolute top-0 right-0 w-64 h-64 bg-accent/10 rounded-full blur-[60px] pointer-events-none -translate-y-1/2 translate-x-1/2" />
 
               {/* Header (Fixed) */}
               <div className="flex items-center justify-between p-5 sm:p-8 pb-1 sm:pb-2 shrink-0 relative z-10">
@@ -343,7 +370,7 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
                               }}
                             />
                           )}
-                          {c.symbol} {c.code}
+                          <span translate="no">{c.symbol} {c.code}</span>
                         </button>
                       ))}
                     </div>
@@ -399,7 +426,7 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
 
                   {/* ── Amount ── */}
                   <div className="relative">
-                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted text-sm font-bold select-none">
+                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted text-sm font-bold select-none" translate="no">
                       {CURRENCIES.find((c) => c.code === currency)?.symbol ??
                         currency}
                     </div>
@@ -446,186 +473,202 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
                     />
                   </div>
 
-                  {/* ── Category ── */}
-                  <div className="space-y-2">
-                    <label className="text-sm text-muted font-medium ml-1">
-                      Category
-                    </label>
-                    <AnimatePresence mode="wait" initial={false}>
-                      <motion.div
-                        key={type}
-                        layout={false}
-                        initial={{ opacity: 0, y: 6 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -6 }}
-                        transition={{ duration: 0.18 }}
-                        className="grid grid-cols-2 gap-2"
-                      >
-                        {categories.map((c) => (
-                          <button
-                            type="button"
-                            key={c.id}
-                            onClick={() => {
-                              setCategory(c.id);
-                              setShowCustomInput(false);
-                            }}
-                            aria-pressed={category === c.id}
-                            className={`relative py-2.5 rounded-full text-sm font-medium transition-colors z-10 ${
-                              category === c.id
-                                ? "text-accent"
-                                : "bg-bg-card/30 text-muted hover:text-bright border border-bg-border hover:bg-bg-card/50"
-                            }`}
-                          >
-                            {category === c.id && (
-                              <motion.div
-                                layoutId="category-highlight"
-                                className="absolute inset-0 bg-accent/20 border border-accent/20 rounded-full z-[-1]"
-                                transition={{
-                                  type: "spring",
-                                  stiffness: 400,
-                                  damping: 30,
-                                }}
-                              />
-                            )}
-                            {c.label}
-                          </button>
-                        ))}
+                    {/* ── Category Selection ── */}
+                    <div className="space-y-3">
+                      <label className="text-sm text-muted font-medium ml-1">
+                        Category
+                      </label>
+                      
+                      {/* Presets Grid */}
+                      <AnimatePresence mode="wait" initial={false}>
+                        <motion.div
+                          key={type}
+                          layout={false}
+                          initial={{ opacity: 0, y: 6 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -6 }}
+                          transition={{ duration: 0.18 }}
+                          className="grid grid-cols-2 gap-2"
+                        >
+                          {categories.map((c) => (
+                            <button
+                              type="button"
+                              key={c.id}
+                              onClick={() => {
+                                setCategory(c.id);
+                                setShowCustomInput(false);
+                              }}
+                              aria-pressed={category === c.id}
+                              className={`relative py-2.5 rounded-full text-sm font-medium transition-colors z-10 ${
+                                category === c.id
+                                  ? "text-accent"
+                                  : "bg-bg-card/30 text-muted hover:text-bright border border-bg-border hover:bg-bg-card/50"
+                              }`}
+                            >
+                              {category === c.id && (
+                                <motion.div
+                                  layoutId="category-highlight"
+                                  className="absolute inset-0 bg-accent/20 border border-accent/20 rounded-full z-[-1]"
+                                  transition={{
+                                    type: "spring", stiffness: 400, damping: 30
+                                  }}
+                                />
+                              )}
+                              {c.label}
+                            </button>
+                          ))}
+                        </motion.div>
+                      </AnimatePresence>
 
-                        {/* Custom category pill */}
-                        <AnimatePresence mode="wait">
-                          {showCustomInput ? (
-                            <motion.div
-                              key="custom-input"
-                              initial={{ opacity: 0, scale: 0.9 }}
-                              animate={{ opacity: 1, scale: 1 }}
-                              exit={{ opacity: 0, scale: 0.9 }}
-                              transition={{ duration: 0.15 }}
-                              className="flex items-center gap-1 bg-bg-card/30 border border-bg-border rounded-full px-2 py-0.5"
-                            >
-                              <input
-                                ref={customInputRef}
-                                autoFocus
-                                type="text"
-                                value={customCategoryDraft}
-                                onChange={(e) =>
-                                  setCustomCategoryDraft(e.target.value)
-                                }
-                                onKeyDown={(e) => {
-                                  if (e.key === "Enter") {
-                                    e.preventDefault();
-                                    handleCustomCategory();
-                                  }
-                                  if (e.key === "Escape") {
-                                    setShowCustomInput(false);
-                                  }
-                                }}
-                                placeholder="Custom…"
-                                className="bg-transparent text-sm text-bright placeholder:text-muted/40 outline-none w-24"
-                              />
-                              <button
+                      {/* Custom Category Section */}
+                      <div className="space-y-3">
+                        {/* The "Pill" that triggers or shows current custom category */}
+                        {!showCustomInput && (
+                          <AnimatePresence mode="wait">
+                            {isCustomActive ? (
+                              <motion.button
+                                key="selected-custom-btn"
                                 type="button"
-                                onClick={handleCustomCategory}
-                                className="p-1 rounded-full hover:bg-accent/20 text-accent transition-colors"
-                              >
-                                <Check className="w-3.5 h-3.5" />
-                              </button>
-                            </motion.div>
-                          ) : isCustomActive ? (
-                            <motion.button
-                              key="selected-custom-btn"
-                              type="button"
-                              initial={{ opacity: 0, scale: 0.9 }}
-                              animate={{ opacity: 1, scale: 1 }}
-                              exit={{ opacity: 0, scale: 0.9 }}
-                              transition={{ duration: 0.15 }}
-                              onClick={() => {
-                                setShowCustomInput(true);
-                                setCustomCategoryDraft(category);
-                                setTimeout(
-                                  () => customInputRef.current?.focus(),
-                                  50,
-                                );
-                              }}
-                              className="relative py-2.5 flex items-center justify-center gap-1 rounded-full text-sm font-medium z-10 text-accent"
-                            >
-                              <motion.div
-                                layoutId="category-highlight"
-                                className="absolute inset-0 bg-accent/20 border border-accent/20 rounded-full z-[-1]"
-                                transition={{
-                                  type: "spring",
-                                  stiffness: 400,
-                                  damping: 30,
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.95 }}
+                                transition={{ duration: 0.15 }}
+                                onClick={() => {
+                                  setShowCustomInput(true);
+                                  setCustomCategoryDraft(category);
+                                  setTimeout(() => customInputRef.current?.focus(), 50);
                                 }}
-                              />
-                              <Edit2 className="w-3.5 h-3.5 flex-shrink-0" />
-                              <span className="truncate max-w-[80px]">
-                                {category.charAt(0).toUpperCase() +
-                                  category.slice(1)}
-                              </span>
-                            </motion.button>
-                          ) : (
-                            <motion.button
-                              key="add-custom-btn"
-                              type="button"
-                              initial={{ opacity: 0, scale: 0.9 }}
-                              animate={{ opacity: 1, scale: 1 }}
-                              exit={{ opacity: 0, scale: 0.9 }}
-                              transition={{ duration: 0.15 }}
-                              onClick={() => {
-                                setShowCustomInput(true);
-                                setTimeout(
-                                  () => customInputRef.current?.focus(),
-                                  50,
-                                );
-                              }}
-                              className="flex items-center justify-center gap-1 py-2.5 rounded-full text-sm font-medium bg-white/5 text-[#808080] hover:text-[#F2F2F2] border border-dashed border-white/10 hover:border-white/20 transition-all"
+                                className="relative w-full py-3 flex items-center justify-center gap-2 rounded-2xl text-sm font-bold z-10 text-accent bg-accent/10 border border-accent/20 overflow-hidden"
+                              >
+                                <Edit2 className="w-4 h-4" />
+                                <span className="uppercase tracking-wider">
+                                  {category}
+                                </span>
+                              </motion.button>
+                            ) : (
+                              <motion.button
+                                key="add-custom-btn"
+                                type="button"
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.95 }}
+                                transition={{ duration: 0.15 }}
+                                onClick={() => {
+                                  setShowCustomInput(true);
+                                  setTimeout(() => customInputRef.current?.focus(), 50);
+                                }}
+                                className="w-full py-3 flex items-center justify-center gap-2 rounded-2xl text-sm font-bold bg-white/5 text-[#808080] hover:text-[#F2F2F2] border border-dashed border-white/10 hover:border-white/20 transition-all uppercase tracking-wider"
+                              >
+                                <Plus className="w-4 h-4" />
+                                Custom Category
+                              </motion.button>
+                            )}
+                          </AnimatePresence>
+                        )}
+
+                        {/* Merged Unified "Box" */}
+                        <AnimatePresence>
+                          {showCustomInput && (
+                            <motion.div
+                              key="custom-input-box"
+                              initial={{ opacity: 0, y: 12, scale: 0.98 }}
+                              animate={{ opacity: 1, y: 0, scale: 1 }}
+                              exit={{ opacity: 0, y: 12, scale: 0.98 }}
+                              transition={{ duration: 0.22, ease: "easeOut" }}
+                              className="w-full flex flex-col gap-5 bg-bg-card/40 border border-bg-border rounded-3xl p-5 shadow-2xl relative z-20"
                             >
-                              <Plus className="w-3.5 h-3.5" />
-                              Add custom
-                            </motion.button>
+                              {/* History Dropdown */}
+                              {customCategories.length > 0 && (
+                                <div className="space-y-2">
+                                  <label className="text-[10px] font-black text-muted uppercase tracking-[0.15em] ml-1 opacity-70">
+                                    History
+                                  </label>
+                                  <select
+                                    onChange={(e) => {
+                                      if (e.target.value) {
+                                        setCategory(e.target.value);
+                                        const savedIcon = getSavedCategoryIcon(e.target.value);
+                                        if (savedIcon) setCustomIcon(savedIcon);
+                                        setShowCustomInput(false);
+                                      }
+                                    }}
+                                    className="w-full bg-bg-card/60 border border-bg-border rounded-xl py-3 px-4 text-bright text-sm outline-none focus:ring-1 focus:ring-accent/50 appearance-none cursor-pointer hover:bg-bg-card/80 transition-colors"
+                                  >
+                                    <option value="">Select from history...</option>
+                                    {customCategories.map((cat) => (
+                                      <option key={cat} value={cat}>
+                                        {cat.charAt(0).toUpperCase() + cat.slice(1)}
+                                      </option>
+                                    ))}
+                                  </select>
+                                </div>
+                              )}
+
+                              {/* Name Input */}
+                              <div className="space-y-2">
+                                <label className="text-[10px] font-black text-muted uppercase tracking-[0.15em] ml-1 opacity-70">
+                                  {customCategories.length > 0 ? "Or New Name" : "Category Name"}
+                                </label>
+                                <div className="flex items-center gap-2">
+                                  <input
+                                    ref={customInputRef}
+                                    autoFocus
+                                    type="text"
+                                    value={customCategoryDraft}
+                                    onChange={(e) => setCustomCategoryDraft(e.target.value)}
+                                    onKeyDown={(e) => {
+                                      if (e.key === "Enter") {
+                                        e.preventDefault();
+                                        handleCustomCategory();
+                                      }
+                                      if (e.key === "Escape") {
+                                        setShowCustomInput(false);
+                                      }
+                                    }}
+                                    placeholder="Enter category name..."
+                                    className="flex-1 min-w-0 bg-bg-card/60 border border-bg-border rounded-xl py-3 px-4 text-bright text-base outline-none focus:ring-2 focus:ring-accent/50 placeholder:text-muted/30"
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={handleCustomCategory}
+                                    className="w-12 h-12 flex items-center justify-center rounded-xl bg-accent text-white shadow-lg shadow-accent/25 hover:bg-accent-hover active:scale-95 transition-all shrink-0"
+                                  >
+                                    <Check className="w-6 h-6" />
+                                  </button>
+                                </div>
+                              </div>
+
+                              {/* Icon Picker (Embedded) */}
+                              <div className="space-y-3 pt-1">
+                                <label className="text-[10px] font-black text-muted uppercase tracking-[0.15em] ml-1 opacity-70">
+                                  Pick Icon
+                                </label>
+                                <div className="grid grid-cols-6 sm:grid-cols-6 gap-2">
+                                  {Object.entries(CUSTOM_ICONS_MAP).map(([iconName, IconComp]) => (
+                                    <button
+                                      key={iconName}
+                                      type="button"
+                                      onClick={() => {
+                                        setCustomIcon(iconName);
+                                        saveCategoryIcon(category, iconName);
+                                      }}
+                                      className={`aspect-square flex items-center justify-center rounded-xl transition-all ${
+                                        customIcon === iconName
+                                          ? "bg-accent/20 text-accent border border-accent/30 shadow-inner"
+                                          : "bg-bg-card/40 text-muted border border-transparent hover:bg-bg-card/60 hover:text-bright"
+                                      }`}
+                                    >
+                                      <IconComp className="w-5 h-5 sm:w-6 sm:h-6" />
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+                            </motion.div>
                           )}
                         </AnimatePresence>
-                      </motion.div>
-                    </AnimatePresence>
-
-                    {/* Custom Icon Picker */}
-                    <AnimatePresence>
-                      {isCustomActive && (
-                        <motion.div
-                          initial={{ opacity: 0, height: 0 }}
-                          animate={{ opacity: 1, height: "auto" }}
-                          exit={{ opacity: 0, height: 0 }}
-                          transition={{ duration: 0.2 }}
-                          className="overflow-hidden"
-                        >
-                          <div className="pt-3">
-                            <label className="text-xs text-muted font-medium ml-1 mb-2 block tracking-wide uppercase opacity-60">
-                              Custom Icon
-                            </label>
-                            <div className="flex flex-wrap gap-2">
-                              {Object.entries(CUSTOM_ICONS_MAP).map(
-                                ([iconName, IconComp]) => (
-                                  <button
-                                    key={iconName}
-                                    type="button"
-                                    onClick={() => setCustomIcon(iconName)}
-                                    className={`p-2 rounded-xl transition-all ${
-                                      customIcon === iconName
-                                        ? "bg-accent/20 text-accent border border-accent/30"
-                                        : "bg-bg-card/30 text-muted border border-transparent hover:bg-bg-card/50 hover:text-bright"
-                                    }`}
-                                  >
-                                    <IconComp className="w-5 h-5" />
-                                  </button>
-                                ),
-                              )}
-                            </div>
-                          </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
+                      </div>
+                    </div>
                   </div>
-                </div>
 
                 {/* ── Submit (Fixed Footer) ── */}
                 <div className="shrink-0 p-5 sm:p-8 pt-2 sm:pt-4 border-t border-bg-border bg-bg-card/10">
@@ -634,24 +677,25 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
                     className="w-full bg-accent hover:bg-accent-hover text-white font-bold py-3.5 px-6 rounded-full shadow-[0_0_20px_rgba(255,0,55,0.3)] transition-all duration-300 hover:shadow-[0_0_30px_rgba(255,0,55,0.5)] transform hover:-translate-y-0.5 text-base uppercase tracking-wide"
                   >
                     {editingTransaction ? "Save Changes" : "Save Transaction"}
-                    </button>
-                  </div>
-                </motion.form>
-              ) : (
-                <CSVImportView
-                  key="import-view"
-                  onBatchAdd={(txs) => {
-                    onBatchAdd?.(txs);
-                    onClose();
-                  }}
-                  onCancel={() => setActiveTab("manual")}
-                />
-              )}
-            </AnimatePresence>
-            </div>
-            </div>
-          </motion.div>
-        )}
+                  </button>
+                </div>
+              </motion.form>
+            ) : (
+              <CSVImportView
+                key="import-view"
+                onBatchAdd={(txs) => {
+                  onBatchAdd?.(txs);
+                  onClose();
+                }}
+                onCancel={() => setActiveTab("manual")}
+                defaultCurrency={defaultCurrency}
+              />
+            )}
+          </AnimatePresence>
+          </div>
+          </div>
+        </motion.div>
+      )}
     </>
   );
 };

@@ -30,15 +30,24 @@ const CustomTooltip = ({
     const isLeft = x < cx;
     const isTop = y < cy;
 
-    // On mobile screens, point the tooltip horizontally inward to prevent clipping off the edge of the screen
-    const isMobile = typeof window !== "undefined" && window.innerWidth < 640;
-    const pointLeft = isMobile ? !isLeft : isLeft;
+    // Determine if we are too close to the left/right edges
+    const leftEdgeThreshold = 80;
+    const rightEdgeThreshold = (viewBox?.width || 300) - 80;
+    
+    // If we're on the left side, we usually want to point RIGHT (translateX="0%")
+    // unless we're on mobile where we flip it? Actually, let's just use the side.
+    // If x < leftEdgeThreshold, MUST point right. 
+    // If x > rightEdgeThreshold, MUST point left.
+    
+    let pointLeft = isLeft;
+    if (x < leftEdgeThreshold) pointLeft = false;
+    else if (x > rightEdgeThreshold) pointLeft = true;
 
     const translateX = pointLeft ? "-100%" : "0%";
     const translateY = isTop ? "-100%" : "0%";
 
-    const offsetX = pointLeft ? -20 : 20;
-    const offsetY = isTop ? -20 : 20;
+    const offsetX = pointLeft ? -15 : 15;
+    const offsetY = isTop ? -15 : 15;
 
     return (
       <div
@@ -89,9 +98,9 @@ export const GlassyDonutChart: React.FC<GlassyDonutChartProps> = ({
   const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
 
   return (
-    <div className="relative w-full h-[250px] sm:h-[280px] md:h-[300px]">
+    <div className="relative w-full px-2 sm:px-4 h-[250px] sm:h-[280px] md:h-[300px] min-w-[240px]">
       <ResponsiveContainer width="100%" height="100%">
-        <PieChart>
+        <PieChart margin={{ top: 10, right: 10, bottom: 10, left: 10 }}>
           <Tooltip
             content={<CustomTooltip currencySymbol={currencySymbol} />}
             cursor={false}
@@ -104,8 +113,8 @@ export const GlassyDonutChart: React.FC<GlassyDonutChartProps> = ({
             data={data}
             cx="50%"
             cy="50%"
-            innerRadius={85}
-            outerRadius={115}
+            innerRadius="72%"
+            outerRadius="92%"
             paddingAngle={6}
             dataKey="value"
             stroke="var(--glass-border)"

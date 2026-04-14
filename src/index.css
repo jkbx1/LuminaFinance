@@ -2,9 +2,9 @@
 
 @theme {
   --font-sans: "Inter", system-ui, sans-serif;
-  --color-accent: #FF0037;
-  --color-accent-hover: #CC002C;
-  
+  --color-accent: #ff0037;
+  --color-accent-hover: #cc002c;
+
   /* Thematic variables mapping to functional names */
   --color-bg-primary: var(--bg-primary);
   --color-bg-card: var(--bg-card);
@@ -17,19 +17,19 @@
   --bg-primary: #000000;
   --bg-card: #111111;
   --bg-border: #222222;
-  --text-muted: #A3A3A3;
-  --text-bright: #FFFFFF;
+  --text-muted: #a3a3a3;
+  --text-bright: #ffffff;
   --glass-bg: rgba(0, 0, 0, 0.4);
   --glass-border: rgba(255, 255, 255, 0.1);
   --glass-accent: rgba(255, 0, 55, 0.15);
   --dot-color: rgba(255, 255, 255, 0.05);
 }
 
-[data-theme='light'] {
-  --bg-primary: #FFFFFF;
-  --bg-card: #F2F4F7;
-  --bg-border: #D1D5DB;
-  --text-muted: #4B5563; /* Darker for better contrast on white */
+[data-theme="light"] {
+  --bg-primary: #ffffff;
+  --bg-card: #f2f4f7;
+  --bg-border: #d1d5db;
+  --text-muted: #4b5563; /* Darker for better contrast on white */
   --text-bright: #111827;
   --glass-bg: rgba(255, 255, 255, 0.7);
   --glass-border: rgba(0, 0, 0, 0.12);
@@ -39,7 +39,7 @@
 
 @layer utilities {
   .glass-panel {
-    @apply backdrop-blur-xl md:backdrop-blur-[24px] shadow-2xl;
+    @apply backdrop-blur-xl md:backdrop-blur-[24px] shadow-md;
     background-color: var(--glass-bg);
     border: 1px solid var(--glass-border);
     background-image: radial-gradient(var(--dot-color) 1px, transparent 1px);
@@ -50,7 +50,9 @@
     @apply rounded-full backdrop-blur-md md:backdrop-blur-lg transition-all duration-300 shadow-lg active:scale-95;
     background-color: var(--glass-bg);
     border: 1px solid var(--glass-border);
-    &:hover { background-color: rgba(128, 128, 128, 0.1); }
+    &:hover {
+      background-color: rgba(128, 128, 128, 0.1);
+    }
   }
 }
 
@@ -103,12 +105,13 @@
   visibility: visible !important;
 }
 
-
 body {
   @apply antialiased min-h-screen font-sans overflow-x-hidden w-full;
   background-color: var(--bg-primary);
   color: var(--text-bright);
-  transition: background-color 0.3s ease, color 0.3s ease;
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease;
 }
 
 /* ── Global Custom Scrollbars ── */
@@ -147,7 +150,7 @@ body {
   appearance: none;
   width: 18px;
   height: 18px;
-  background: #FF0037;
+  background: #ff0037;
   border: 4px solid #000000;
   border-radius: 50%;
   cursor: pointer;
@@ -157,7 +160,7 @@ body {
 
 .range-thumb-accent::-webkit-slider-thumb:hover {
   transform: scale(1.1);
-  background: #FF1A4D;
+  background: #ff1a4d;
   box-shadow: 0 0 15px rgba(255, 0, 55, 0.6);
 }
 
@@ -165,7 +168,7 @@ body {
   pointer-events: auto;
   width: 18px;
   height: 18px;
-  background: #FF0037;
+  background: #ff0037;
   border: 4px solid #000000;
   border-radius: 50%;
   cursor: pointer;
@@ -175,7 +178,7 @@ body {
 
 .range-thumb-accent::-moz-range-thumb:hover {
   transform: scale(1.1);
-  background: #FF1A4D;
+  background: #ff1a4d;
   box-shadow: 0 0 15px rgba(255, 0, 55, 0.6);
 }
 
@@ -183,7 +186,7 @@ body {
   :focus-visible {
     @apply outline-none ring-2 ring-accent ring-offset-2 ring-offset-bg-primary;
   }
-  
+
   .sr-only {
     position: absolute;
     width: 1px;

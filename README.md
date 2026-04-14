@@ -19,7 +19,7 @@ Lumina Finance is a modern, responsive, and visually stunning personal finance a
 - **Animations:** [Framer Motion](https://www.framer.com/motion/)
 - **Icons:** [Lucide React](https://lucide.dev/)
 - **Backend & Auth:** [Firebase](https://firebase.google.com/) (Authentication & Firestore)
-- **Currency Conversion:** [Frankfurter API](https://www.frankfurter.app/)
+- **Currency Conversion:** [Frankfurter API](https://frankfurter.dev/)
 
 ## 🚀 Getting Started
 

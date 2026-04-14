@@ -9,14 +9,14 @@
     </filter>
   </defs>
 
-  <rect width="256" height="256" rx="56" fill="#050505" />
+  <rect width="256" height="256" rx="56" fill="none" />
 
   <rect x="144" y="56" width="48" height="72" rx="6" fill="#FF004D" filter="url(#neon-glow)" />
   <rect x="144" y="56" width="48" height="72" rx="6" fill="#FF004D" />
 
   <path d="M 48 104 Q 128 128 208 104" fill="none" stroke="#FFFFFF" stroke-width="12" stroke-linecap="round" />
 
-  <path d="M 48 104 Q 128 128 208 104 L 208 176 C 208 193.6 193.6 208 176 208 L 80 208 C 62.4 208 48 193.6 48 176 Z" fill="#050505" stroke="#FFFFFF" stroke-width="12" stroke-linejoin="round" />
+  <path d="M 48 104 Q 128 128 208 104 L 208 176 C 208 193.6 193.6 208 176 208 L 80 208 C 62.4 208 48 193.6 48 176 Z" fill="none" stroke="#FFFFFF" stroke-width="12" stroke-linejoin="round" />
   
   <circle cx="72" cy="180" r="4" fill="#FFFFFF" />
   <circle cx="92" cy="180" r="4" fill="#FFFFFF" />

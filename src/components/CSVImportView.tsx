@@ -16,6 +16,7 @@ import { type Transaction } from "./ExpenseCard";
 interface CSVImportViewProps {
   onBatchAdd: (transactions: Omit<Transaction, "id">[]) => void;
   onCancel: () => void;
+  defaultCurrency: string;
 }
 
 interface Mapping {
@@ -31,6 +32,7 @@ const SUPPORTED_CURRENCIES = ["USD", "EUR", "GBP", "PLN", "JPY", "CAD"];
 export const CSVImportView: React.FC<CSVImportViewProps> = ({
   onBatchAdd,
   onCancel,
+  defaultCurrency,
 }) => {
   const [step, setStep] = useState<"upload" | "map" | "confirm">("upload");
   const [file, setFile] = useState<File | null>(null);
@@ -119,7 +121,6 @@ export const CSVImportView: React.FC<CSVImportViewProps> = ({
   const normalizedData = useMemo(() => {
     if (headerIndex === -1 || step !== "confirm") return [];
     const rowsToProcess = csvData.slice(headerIndex + 1);
-    const defaultCurrency = localStorage.getItem("lumina_default_currency") ?? "USD";
 
     return rowsToProcess
       .map(row => {
@@ -175,7 +176,6 @@ export const CSVImportView: React.FC<CSVImportViewProps> = ({
   const handleImport = () => {
     const batchId = crypto.randomUUID();
     const batchName = file?.name || "Imported Batch";
-    const defaultCurrency = localStorage.getItem("lumina_currency") ?? "USD";
 
     // 1. Create the Batch Header transaction (0.00)
     const headerTx: Omit<Transaction, "id"> = {

@@ -8,7 +8,13 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import { TrendingUp, TrendingDown, Minus, RefreshCw, ChevronDown } from "lucide-react";
+import {
+  TrendingUp,
+  TrendingDown,
+  Minus,
+  RefreshCw,
+  ChevronDown,
+} from "lucide-react";
 import { GlassCard } from "./ui/GlassCard";
 
 const BASE_CURRENCIES = ["USD", "EUR", "GBP", "JPY", "PLN"] as const;
@@ -23,16 +29,33 @@ const TRACKED_CURRENCIES: Record<BaseCurrency, string[]> = {
 };
 
 const CURRENCY_FLAGS: Record<string, string> = {
-  USD: "🇺🇸", EUR: "🇪🇺", GBP: "🇬🇧", JPY: "🇯🇵", PLN: "🇵🇱",
-  CHF: "🇨🇭", CAD: "🇨🇦", AUD: "🇦🇺", CNY: "🇨🇳", SEK: "🇸🇪",
-  NOK: "🇳🇴", DKK: "🇩🇰",
+  USD: "🇺🇸",
+  EUR: "🇪🇺",
+  GBP: "🇬🇧",
+  JPY: "🇯🇵",
+  PLN: "🇵🇱",
+  CHF: "🇨🇭",
+  CAD: "🇨🇦",
+  AUD: "🇦🇺",
+  CNY: "🇨🇳",
+  SEK: "🇸🇪",
+  NOK: "🇳🇴",
+  DKK: "🇩🇰",
 };
 
 const CURRENCY_NAMES: Record<string, string> = {
-  USD: "US Dollar", EUR: "Euro", GBP: "British Pound", JPY: "Japanese Yen",
-  PLN: "Polish Złoty", CHF: "Swiss Franc", CAD: "Canadian Dollar",
-  AUD: "Australian Dollar", CNY: "Chinese Yuan", SEK: "Swedish Krona",
-  NOK: "Norwegian Krone", DKK: "Danish Krone",
+  USD: "US Dollar",
+  EUR: "Euro",
+  GBP: "British Pound",
+  JPY: "Japanese Yen",
+  PLN: "Polish Złoty",
+  CHF: "Swiss Franc",
+  CAD: "Canadian Dollar",
+  AUD: "Australian Dollar",
+  CNY: "Chinese Yuan",
+  SEK: "Swedish Krona",
+  NOK: "Norwegian Krone",
+  DKK: "Danish Krone",
 };
 
 interface HistoricalPoint {
@@ -64,8 +87,14 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 };
 
 const CurrencyCard: React.FC<CurrencyCardProps> = ({
-  code, rate, base, weekOldRate, isSelected, onSelect,
-  historicalLoading, historicalData,
+  code,
+  rate,
+  base,
+  weekOldRate,
+  isSelected,
+  onSelect,
+  historicalLoading,
+  historicalData,
 }) => {
   const pctChange =
     weekOldRate && weekOldRate !== 0
@@ -87,10 +116,7 @@ const CurrencyCard: React.FC<CurrencyCardProps> = ({
   };
 
   return (
-    <motion.div
-      layout
-      className="relative"
-    >
+    <motion.div layout className="relative">
       <div
         className={`glass-panel rounded-2xl p-4 transition-all duration-300 ${
           isSelected
@@ -101,10 +127,16 @@ const CurrencyCard: React.FC<CurrencyCardProps> = ({
         {/* Header row */}
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
-            <span className="text-2xl leading-none">{CURRENCY_FLAGS[code] ?? "💱"}</span>
+            <span className="text-2xl leading-none">
+              {CURRENCY_FLAGS[code] ?? "💱"}
+            </span>
             <div>
-              <p className="text-bright font-bold text-sm leading-tight">{code}</p>
-              <p className="text-muted text-[10px] leading-tight">{CURRENCY_NAMES[code] ?? code}</p>
+              <p className="text-bright font-bold text-sm leading-tight">
+                {code}
+              </p>
+              <p className="text-muted text-[10px] leading-tight">
+                {CURRENCY_NAMES[code] ?? code}
+              </p>
             </div>
           </div>
           <div className="text-right flex items-center gap-1.5">
@@ -114,8 +146,8 @@ const CurrencyCard: React.FC<CurrencyCardProps> = ({
                   isUp
                     ? "text-emerald-400 bg-emerald-400/10"
                     : isDown
-                    ? "text-rose-400 bg-rose-400/10"
-                    : "text-muted bg-muted/10"
+                      ? "text-rose-400 bg-rose-400/10"
+                      : "text-muted bg-muted/10"
                 }`}
               >
                 {isUp ? "+" : ""}
@@ -128,8 +160,8 @@ const CurrencyCard: React.FC<CurrencyCardProps> = ({
                 onSelect();
               }}
               className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300 border ${
-                isSelected 
-                  ? "bg-accent text-white border-accent shadow-[0_0_15px_rgba(255,0,55,0.4)]" 
+                isSelected
+                  ? "bg-accent text-white border-accent shadow-[0_0_15px_rgba(255,0,55,0.4)]"
                   : "bg-bg-card/50 text-muted border-bg-border hover:text-bright hover:border-bg-border/80"
               }`}
               aria-label={isSelected ? "Collapse" : "Expand"}
@@ -171,7 +203,9 @@ const CurrencyCard: React.FC<CurrencyCardProps> = ({
         {/* Strength bar */}
         <div className="mb-1">
           <div className="flex items-center justify-between mb-1">
-            <span className="text-[9px] text-muted uppercase tracking-widest">Strength</span>
+            <span className="text-[9px] text-muted uppercase tracking-widest">
+              Strength
+            </span>
           </div>
           <div className="h-1.5 bg-bg-border rounded-full overflow-hidden">
             <motion.div
@@ -205,15 +239,25 @@ const CurrencyCard: React.FC<CurrencyCardProps> = ({
                     margin={{ top: 4, right: 4, bottom: 0, left: 4 }}
                   >
                     <defs>
-                      <linearGradient id={`grad-${code}`} x1="0" y1="0" x2="0" y2="1">
+                      <linearGradient
+                        id={`grad-${code}`}
+                        x1="0"
+                        y1="0"
+                        x2="0"
+                        y2="1"
+                      >
                         <stop
                           offset="5%"
-                          stopColor={isUp ? "#10B981" : isDown ? "#FF4D6D" : "#6366F1"}
+                          stopColor={
+                            isUp ? "#10B981" : isDown ? "#FF4D6D" : "#6366F1"
+                          }
                           stopOpacity={0.4}
                         />
                         <stop
                           offset="95%"
-                          stopColor={isUp ? "#10B981" : isDown ? "#FF4D6D" : "#6366F1"}
+                          stopColor={
+                            isUp ? "#10B981" : isDown ? "#FF4D6D" : "#6366F1"
+                          }
                           stopOpacity={0}
                         />
                       </linearGradient>
@@ -235,7 +279,11 @@ const CurrencyCard: React.FC<CurrencyCardProps> = ({
                       tickLine={false}
                       width={36}
                       tickFormatter={(v) =>
-                        v >= 100 ? v.toFixed(1) : v >= 1 ? v.toFixed(3) : v.toFixed(5)
+                        v >= 100
+                          ? v.toFixed(1)
+                          : v >= 1
+                            ? v.toFixed(3)
+                            : v.toFixed(5)
                       }
                     />
                     <Tooltip content={<CustomTooltip />} />
@@ -267,11 +315,13 @@ interface ExchangeRatesPanelProps {
   /** Pass-through of already-fetched rates (base=USD) from Dashboard */
   latestRates: Record<string, number>;
   ratesLoading: boolean;
+  lastUpdatedDate: string;
 }
 
 export const ExchangeRatesPanel: React.FC<ExchangeRatesPanelProps> = ({
   latestRates,
   ratesLoading,
+  lastUpdatedDate,
 }) => {
   const [base, setBase] = useState<BaseCurrency>("USD");
   const [selectedCurrency, setSelectedCurrency] = useState<string | null>(null);
@@ -291,10 +341,18 @@ export const ExchangeRatesPanel: React.FC<ExchangeRatesPanelProps> = ({
     const dateStr = endDate.toISOString().split("T")[0];
 
     const symbols = TRACKED_CURRENCIES[base].join(",");
-    fetch(`https://api.frankfurter.app/${dateStr}?base=${base}&symbols=${symbols}`)
+    fetch(
+      `https://api.frankfurter.dev/v2/rates?date=${dateStr}&base=${base}&quotes=${symbols}`,
+    )
       .then((r) => r.json())
       .then((data) => {
-        setWeekOldRates(data.rates ?? {});
+        const ratesMap: Record<string, number> = {};
+        if (Array.isArray(data)) {
+          data.forEach((item: any) => {
+            ratesMap[item.quote] = item.rate;
+          });
+        }
+        setWeekOldRates(ratesMap);
       })
       .catch(() => setWeekOldRates({}));
   }, [base]);
@@ -315,17 +373,18 @@ export const ExchangeRatesPanel: React.FC<ExchangeRatesPanelProps> = ({
         const end = endDate.toISOString().split("T")[0];
 
         const res = await fetch(
-          `https://api.frankfurter.app/${start}..${end}?base=${baseCurrency}&symbols=${code}`
+          `https://api.frankfurter.dev/v2/rates?from=${start}&to=${end}&base=${baseCurrency}&quotes=${code}`,
         );
         const data = await res.json();
 
-        if (data.rates) {
-          const points: HistoricalPoint[] = Object.entries(data.rates)
-            .sort(([a], [b]) => a.localeCompare(b))
-            .map(([date, rateObj]) => ({
-              date,
-              rate: (rateObj as Record<string, number>)[code] ?? 0,
-            }));
+        if (Array.isArray(data)) {
+          const points: HistoricalPoint[] = data
+            .filter((item: any) => item.quote === code)
+            .map((item: any) => ({
+              date: item.date,
+              rate: item.rate,
+            }))
+            .sort((a, b) => a.date.localeCompare(b.date));
           setHistoricalData(points);
         }
       } catch {
@@ -334,7 +393,7 @@ export const ExchangeRatesPanel: React.FC<ExchangeRatesPanelProps> = ({
         setHistoricalLoading(false);
       }
     },
-    []
+    [],
   );
 
   const handleSelectCurrency = (code: string) => {
@@ -352,21 +411,14 @@ export const ExchangeRatesPanel: React.FC<ExchangeRatesPanelProps> = ({
       return latestRates[code] ?? 1;
     }
     const baseInUsd = latestRates[base] ?? 1;
-    const codeInUsd = code === "USD" ? 1 : latestRates[code] ?? 1;
+    const codeInUsd = code === "USD" ? 1 : (latestRates[code] ?? 1);
     return codeInUsd / baseInUsd;
   };
 
   const trackedCurrencies = TRACKED_CURRENCIES[base];
 
   return (
-    <motion.div
-      key="rates"
-      initial={{ opacity: 0, x: 60 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: 60 }}
-      transition={{ duration: 0.3, ease: "easeInOut" }}
-      className="w-full"
-    >
+    <div className="w-full">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
@@ -428,8 +480,8 @@ export const ExchangeRatesPanel: React.FC<ExchangeRatesPanelProps> = ({
             },
             {
               label: "Last Updated",
-              value: "Live",
-              sub: "Via frankfurter.app",
+              value: lastUpdatedDate,
+              sub: `Via frankfurter.dev`,
               icon: "🔄",
             },
           ].map((stat) => (
@@ -440,7 +492,9 @@ export const ExchangeRatesPanel: React.FC<ExchangeRatesPanelProps> = ({
                   <p className="text-muted text-[9px] uppercase tracking-widest mb-0.5 truncate">
                     {stat.label}
                   </p>
-                  <p className="text-bright font-black text-sm truncate">{stat.value}</p>
+                  <p className="text-bright font-black text-sm truncate">
+                    {stat.value}
+                  </p>
                   <p className="text-muted text-[9px] truncate">{stat.sub}</p>
                 </div>
               </div>
@@ -486,6 +540,6 @@ export const ExchangeRatesPanel: React.FC<ExchangeRatesPanelProps> = ({
           Failed to load historical data. Check your connection.
         </p>
       )}
-    </motion.div>
+    </div>
   );
 };

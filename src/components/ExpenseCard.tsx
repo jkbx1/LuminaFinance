@@ -32,6 +32,7 @@ import {
   Plane,
   Train,
 } from "lucide-react";
+import { getSavedCategoryIcon } from "../lib/utils";
 
 /** Maps ISO currency code → symbol */
 export const CURRENCY_SYMBOL: Record<string, string> = {
@@ -95,6 +96,14 @@ const CategoryIcon = ({
   category: string;
   customIcon?: string;
 }) => {
+  // Global preference for custom categories takes precedence
+  const savedIconName = getSavedCategoryIcon(category);
+  if (savedIconName && CUSTOM_ICONS_MAP[savedIconName]) {
+    const Icon = CUSTOM_ICONS_MAP[savedIconName];
+    return <Icon className="w-5 h-5 text-accent" />;
+  }
+
+  // Fallback to the icon saved on the transaction record itself
   if (customIcon && CUSTOM_ICONS_MAP[customIcon]) {
     const Icon = CUSTOM_ICONS_MAP[customIcon];
     return <Icon className="w-5 h-5 text-accent" />;
@@ -340,6 +349,7 @@ const ExpenseCardComponent: React.FC<ExpenseCardProps> = ({
         layoutId={isMobileChrome ? undefined : `amounts-${transaction.id}`}
         className="flex flex-col items-end gap-0.5 min-w-0"
         aria-label={`${isIncome ? "Income" : "Expense"} amount: ${primaryAmount}`}
+        translate="no"
       >
         <div className="flex items-center gap-1 w-full justify-end" aria-hidden="true">
           {isIncome ? (
@@ -360,7 +370,11 @@ const ExpenseCardComponent: React.FC<ExpenseCardProps> = ({
         {convertToDefault &&
           defaultCurrency &&
           transaction.currency !== defaultCurrency && (
-            <div className="flex items-center gap-1 text-xs sm:text-sm text-muted w-full justify-end" aria-label={`Converted to ${defaultCurrency}: ${currencySymbol(defaultCurrency)}${Math.abs(convertToDefault(transaction.amount, transaction.currency)).toFixed(2)}`}>
+            <div 
+              className="flex items-center gap-1 text-xs sm:text-sm text-muted w-full justify-end" 
+              aria-label={`Converted to ${defaultCurrency}: ${currencySymbol(defaultCurrency)}${Math.abs(convertToDefault(transaction.amount, transaction.currency)).toFixed(2)}`}
+              translate="no"
+            >
               <span aria-hidden="true" className="shrink-0">→</span>
               <ScrollingText
                 active={isExpanded || isHovered}

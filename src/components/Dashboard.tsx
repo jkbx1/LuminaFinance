@@ -31,6 +31,29 @@ import { MonthlyView } from "./MonthlyView";
 import { FloatingNavbar } from "./ui/FloatingNavbar";
 import { ExchangeRatesPanel } from "./ExchangeRatesPanel";
 
+const VIEW_ORDER = {
+  overview: 0,
+  monthly: 1,
+  rates: 2,
+} as const;
+
+type ViewType = keyof typeof VIEW_ORDER;
+
+const slideVariants = {
+  initial: (direction: number) => ({
+    x: direction > 0 ? 30 : direction < 0 ? -30 : 0,
+    opacity: 0,
+  }),
+  animate: {
+    x: 0,
+    opacity: 1,
+  },
+  exit: (direction: number) => ({
+    x: direction < 0 ? 30 : direction > 0 ? -30 : 0,
+    opacity: 0,
+  }),
+};
+
 export const Dashboard: React.FC = () => {
   const { user, logout, isGuest, signInWithGoogle, clearGuest } = useAuth();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -39,7 +62,17 @@ export const Dashboard: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] =
     useState<Transaction | null>(null);
-  const [view, setView] = useState<"overview" | "monthly" | "rates">("overview");
+  const [view, setView] = useState<ViewType>("overview");
+  const [direction, setDirection] = useState(0);
+
+  const handleSetView = (newView: ViewType) => {
+    if (newView === view) return;
+    const newIndex = VIEW_ORDER[newView];
+    const currentIndex = VIEW_ORDER[view];
+    setDirection(newIndex > currentIndex ? 1 : -1);
+    setView(newView);
+  };
+
   const [selectedCalendarDate, setSelectedCalendarDate] = useState<Date | null>(
     new Date(),
   );
@@ -47,11 +80,13 @@ export const Dashboard: React.FC = () => {
 
   const [chartTimeframe, setChartTimeframe] = useState<
     "daily" | "weekly" | "monthly" | "yearly" | "all"
-  >("all");
+  >("monthly");
+
+  const [chartType, setChartType] = useState<"expense" | "income">("expense");
 
   const [balanceTimeframe, setBalanceTimeframe] = useState<
     "daily" | "weekly" | "monthly" | "yearly" | "all"
-  >("all");
+  >("monthly");
 
   // Detect mobile Chrome synchronously — useMemo is correct on first render,
   // avoiding the useEffect delay that could cause glitchy View Transitions
@@ -69,20 +104,45 @@ export const Dashboard: React.FC = () => {
   const [defaultCurrency, setDefaultCurrency] = useState<string>(
     () => localStorage.getItem("lumina_default_currency") ?? "USD",
   );
-  // rates["EUR"] = 0.92 means 1 USD = 0.92 EUR (base = USD)
-  const [exchangeRates, setExchangeRates] = useState<Record<string, number>>({
-    USD: 1,
+  const [exchangeRates, setExchangeRates] = useState<Record<string, number>>(() => {
+    const cached = localStorage.getItem("lumina_exchange_rates_cache");
+    if (cached) {
+      try {
+        return JSON.parse(cached);
+      } catch (e) {
+        console.error("Failed to parse cached rates:", e);
+      }
+    }
+    return { USD: 1 };
   });
   const [ratesLoading, setRatesLoading] = useState(true);
+  const [lastUpdatedDate, setLastUpdatedDate] = useState<string>(
+    () => localStorage.getItem("lumina_last_rates_date") ?? "Live"
+  );
 
   useEffect(() => {
-    fetch("https://api.frankfurter.app/latest?base=USD")
+    fetch("https://api.frankfurter.dev/v2/rates?base=USD")
       .then((r) => r.json())
       .then((data) => {
-        setExchangeRates({ USD: 1, ...data.rates });
+        const ratesMap: Record<string, number> = { USD: 1 };
+        let updateDate = "Live";
+        if (Array.isArray(data) && data.length > 0) {
+          updateDate = data[0].date;
+          data.forEach((item: any) => {
+            ratesMap[item.quote] = item.rate;
+          });
+          
+          setExchangeRates(ratesMap);
+          setLastUpdatedDate(updateDate);
+          localStorage.setItem("lumina_exchange_rates_cache", JSON.stringify(ratesMap));
+          localStorage.setItem("lumina_last_rates_date", updateDate);
+        }
         setRatesLoading(false);
       })
-      .catch(() => setRatesLoading(false));
+      .catch((err) => {
+        console.error("Failed to fetch rates:", err);
+        setRatesLoading(false);
+      });
   }, []);
 
 
@@ -486,7 +546,7 @@ export const Dashboard: React.FC = () => {
   );
 
   const filteredChartTransactions = transactions.filter((tx) => {
-    if (tx.type !== "expense") return false;
+    if (tx.type !== chartType) return false;
     if (chartTimeframe === "all") return true;
 
     const txDate = tx.date;
@@ -526,11 +586,22 @@ export const Dashboard: React.FC = () => {
   );
 
   const colorMap: Record<string, string> = {
-    food: "#FF0037", // Red (Accent)
-    shopping: "#6366F1", // Indigo
-    housing: "#F59E0B", // Amber
-    utilities: "#10B981", // Emerald
-    other: "#94A3B8", // Slate
+    // Expense Categories
+    food: "#FF0037", 
+    shopping: "#6366F1",
+    housing: "#F59E0B",
+    transport: "#3B82F6",
+    utilities: "#10B981",
+    
+    // Income Categories
+    salary: "#10B981",
+    freelance: "#3B82F6",
+    investment: "#8B5CF6",
+    gift: "#EC4899",
+    family: "#F59E0B",
+    
+    // Shared
+    other: "#94A3B8",
   };
 
   const chartData = Object.entries(chartDataMap).map(([name, value]) => ({
@@ -542,7 +613,11 @@ export const Dashboard: React.FC = () => {
   // Fallback empty chart data
   const isEmptyChart = chartData.length === 0;
   if (isEmptyChart) {
-    chartData.push({ name: "No Expenses", value: 0.1, color: "#1A1A1A" });
+    chartData.push({ 
+      name: chartType === "expense" ? "No Expenses" : "No Income", 
+      value: 0.1, 
+      color: "#1A1A1A" 
+    });
   }
 
   return (
@@ -563,20 +638,22 @@ export const Dashboard: React.FC = () => {
 
         <div className="max-w-7xl mx-auto">
 
-          <AnimatePresence mode="wait">
-            {view === "overview" ? (
+          <AnimatePresence mode="wait" custom={direction}>
+            {view === "overview" && (
               <motion.div
                 key="overview"
-                initial={{ opacity: 0, x: -30 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -30 }}
+                custom={direction}
+                variants={slideVariants}
+                initial="initial"
+                animate="animate"
+                exit="exit"
                 transition={{ duration: 0.3, ease: "easeInOut" }}
                 className="grid grid-cols-1 lg:grid-cols-3 xl:grid-cols-4 gap-6 xl:gap-8"
               >
                 {/* Left Column: Summary & Chart */}
                 <div className="lg:col-span-1 xl:col-span-1 space-y-6 relative z-20">
                   {/* Currency Selector above Balance */}
-                  <div className="flex gap-1 glass-panel p-1 rounded-full mb-2" role="group" aria-label="Currency selection">
+                  <div className="flex gap-1 glass-panel p-1 rounded-full mb-2" role="group" aria-label="Currency selection" translate="no">
                     {Object.keys(CURRENCY_SYMBOL).map((code) => (
                       <button
                         key={code}
@@ -601,7 +678,6 @@ export const Dashboard: React.FC = () => {
                     ))}
                   </div>
                   <GlassCard className="relative overflow-hidden">
-                    <div className="absolute -top-10 -right-10 w-40 h-40 bg-accent/10 blur-[50px] rounded-full pointer-events-none" />
                     <div className="flex items-center justify-between mb-1 relative z-10">
                       <h2 className="text-muted text-sm font-medium tracking-wide uppercase">
                         Total Balance
@@ -654,7 +730,10 @@ export const Dashboard: React.FC = () => {
                             const len = formatted.length;
                             const fontSize = len > 14 ? "text-2xl" : len > 11 ? "text-3xl" : "text-4xl";
                             return (
-                              <span className={`${fontSize} font-bold text-bright tracking-tight block whitespace-nowrap transition-all duration-300`}>
+                              <span 
+                                className={`${fontSize} font-bold text-bright tracking-tight block whitespace-nowrap transition-all duration-300`}
+                                translate="no"
+                              >
                                 {formatted}
                               </span>
                             );
@@ -674,7 +753,10 @@ export const Dashboard: React.FC = () => {
                               const len = formatted.length;
                               const fontSize = len > 12 ? "text-[11px]" : len > 10 ? "text-xs" : len > 8 ? "text-sm" : "text-base";
                               return (
-                                <div className={`${fontSize} font-bold text-bright whitespace-nowrap transition-all duration-300`}>
+                                <div 
+                                  className={`${fontSize} font-bold text-bright whitespace-nowrap transition-all duration-300`}
+                                  translate="no"
+                                >
                                   {formatted}
                                 </div>
                               );
@@ -694,7 +776,10 @@ export const Dashboard: React.FC = () => {
                               const len = formatted.length;
                               const fontSize = len > 12 ? "text-[11px]" : len > 10 ? "text-xs" : len > 8 ? "text-sm" : "text-base";
                               return (
-                                <div className={`${fontSize} font-bold text-bright whitespace-nowrap transition-all duration-300`}>
+                                <div 
+                                  className={`${fontSize} font-bold text-bright whitespace-nowrap transition-all duration-300`}
+                                  translate="no"
+                                >
                                   {formatted}
                                 </div>
                               );
@@ -707,15 +792,16 @@ export const Dashboard: React.FC = () => {
                   <GlassCard>
                     <div className="flex items-center justify-between mb-6">
                       <h3 className="text-lg font-bold text-bright">
-                        Spending Overview
+                        {chartType === "expense" ? "Spending" : "Income"} Overview
                       </h3>
-                      <select
-                        value={chartTimeframe}
-                        onChange={(e) =>
-                          setChartTimeframe(e.target.value as any)
-                        }
-                        className="bg-bg-card border border-bg-border text-bright font-medium text-xs rounded-full px-3 py-1 outline-none focus:ring-1 focus:ring-accent appearance-none cursor-pointer hover:bg-bg-card/80 transition-colors"
-                      >
+                      <div className="flex items-center gap-3">
+                        <select
+                          value={chartTimeframe}
+                          onChange={(e) =>
+                            setChartTimeframe(e.target.value as any)
+                          }
+                          className="bg-bg-card border border-bg-border text-bright font-medium text-xs rounded-full px-3 py-1 outline-none focus:ring-1 focus:ring-accent appearance-none cursor-pointer hover:bg-bg-card/80 transition-colors"
+                        >
                         <option
                           value="daily"
                           className="bg-bg-card text-bright"
@@ -748,12 +834,53 @@ export const Dashboard: React.FC = () => {
                         </option>
                       </select>
                     </div>
-                    <GlassyDonutChart
+                  </div>
+                  <GlassyDonutChart
                       data={chartData}
-                      totalText="Expenses"
+                      totalText={chartType === "expense" ? "Expenses" : "Income"}
                       currencySymbol={currencySymbol(defaultCurrency)}
                       forceZeroTotal={isEmptyChart}
                     />
+
+                    {/* Centered Toggle Buttons under the Chart */}
+                    <div className="flex justify-center mt-6 mb-2">
+                      <div className="flex bg-bg-card/30 p-1 rounded-full border border-bg-border backdrop-blur-sm relative">
+                        <button
+                          onClick={() => setChartType("expense")}
+                          className={`relative px-4 py-2 text-[10px] sm:text-xs font-bold rounded-full transition-all duration-300 z-10 ${
+                            chartType === "expense"
+                              ? "text-rose-400"
+                              : "text-muted hover:text-bright"
+                          }`}
+                        >
+                          {chartType === "expense" && (
+                            <motion.div
+                              layoutId="chart-type-pill-footer"
+                              className="absolute inset-0 bg-rose-500/10 border border-rose-500/20 rounded-full z-[-1]"
+                              transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                            />
+                          )}
+                          EXPENSES
+                        </button>
+                        <button
+                          onClick={() => setChartType("income")}
+                          className={`relative px-4 py-2 text-[10px] sm:text-xs font-bold rounded-full transition-all duration-300 z-10 ${
+                            chartType === "income"
+                              ? "text-emerald-400"
+                              : "text-muted hover:text-bright"
+                          }`}
+                        >
+                          {chartType === "income" && (
+                            <motion.div
+                              layoutId="chart-type-pill-footer"
+                              className="absolute inset-0 bg-emerald-500/10 border border-emerald-500/20 rounded-full z-[-1]"
+                              transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                            />
+                          )}
+                          INCOME
+                        </button>
+                      </div>
+                    </div>
                   </GlassCard>
                 </div>
 
@@ -852,12 +979,15 @@ export const Dashboard: React.FC = () => {
                   </div>
                 </div>
               </motion.div>
-            ) : view === "monthly" ? (
+            )}
+            {view === "monthly" && (
               <motion.div
                 key="monthly"
-                initial={{ opacity: 0, x: 30 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 30 }}
+                custom={direction}
+                variants={slideVariants}
+                initial="initial"
+                animate="animate"
+                exit="exit"
                 transition={{ duration: 0.3, ease: "easeInOut" }}
                 className="w-full"
               >
@@ -875,11 +1005,24 @@ export const Dashboard: React.FC = () => {
                   setIsFilterModalOpen={setIsFilterModalOpen}
                 />
               </motion.div>
-            ) : (
-              <ExchangeRatesPanel
-                latestRates={exchangeRates}
-                ratesLoading={ratesLoading}
-              />
+            )}
+            {view === "rates" && (
+              <motion.div
+                key="rates"
+                custom={direction}
+                variants={slideVariants}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+                transition={{ duration: 0.3, ease: "easeInOut" }}
+                className="w-full"
+              >
+                <ExchangeRatesPanel
+                  latestRates={exchangeRates}
+                  ratesLoading={ratesLoading}
+                  lastUpdatedDate={lastUpdatedDate}
+                />
+              </motion.div>
             )}
           </AnimatePresence>
         </div>
@@ -896,7 +1039,7 @@ export const Dashboard: React.FC = () => {
         >
           <div className="glass-panel p-1.5 rounded-full flex flex-1 pointer-events-auto border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] backdrop-blur-xl">
             <button
-              onClick={() => setView("overview")}
+              onClick={() => handleSetView("overview")}
               className={`relative flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-full z-10 transition-all duration-300 ${
                 view === "overview"
                   ? "text-white"
@@ -914,7 +1057,7 @@ export const Dashboard: React.FC = () => {
               Overview
             </button>
             <button
-              onClick={() => setView("monthly")}
+              onClick={() => handleSetView("monthly")}
               className={`relative flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-full z-10 transition-all duration-300 ${
                 view === "monthly"
                   ? "text-white"
@@ -931,7 +1074,7 @@ export const Dashboard: React.FC = () => {
               Monthly
             </button>
             <button
-              onClick={() => setView("rates")}
+              onClick={() => handleSetView("rates")}
               className={`relative flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-full z-10 transition-all duration-300 ${
                 view === "rates"
                   ? "text-white"
@@ -967,6 +1110,8 @@ export const Dashboard: React.FC = () => {
           editingTransaction={editingTransaction}
           onEdit={handleEditTransaction}
           defaultDate={selectedCalendarDate || new Date()}
+          defaultCurrency={defaultCurrency}
+          transactions={transactions}
         />
       </main>
     </LayoutGroup>

@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from "react";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronLeft, ChevronRight, Filter } from "lucide-react";
+import { ChevronLeft, ChevronRight, Filter, Search, Calendar } from "lucide-react";
 import { flushSync } from "react-dom";
 import { ExpenseCard, type Transaction } from "./ExpenseCard";
 import { GlassCard } from "./ui/GlassCard";
@@ -35,6 +35,7 @@ export const MonthlyView: React.FC<MonthlyViewProps> = ({
   setIsFilterModalOpen,
 }) => {
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const monthPickerRef = React.useRef<HTMLInputElement>(null);
   const [viewMode, setViewMode] = useState<"day" | "month">("day");
   const [filterType, setFilterType] = useState<"all" | "income" | "expense">(
     "all",
@@ -44,6 +45,7 @@ export const MonthlyView: React.FC<MonthlyViewProps> = ({
   const [filterMaxAmount, setFilterMaxAmount] = useState<number | null>(null);
   const [filterStartDate, setFilterStartDate] = useState<string>("");
   const [filterEndDate, setFilterEndDate] = useState<string>("");
+  const [filterSearch, setFilterSearch] = useState<string>("");
 
   // Detect mobile Chrome synchronously — useMemo is correct on first render,
   // avoiding the useEffect delay that could cause glitchy View Transitions
@@ -80,6 +82,14 @@ export const MonthlyView: React.FC<MonthlyViewProps> = ({
     setCurrentMonth(
       new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1),
     );
+    setInjectedSelectedDate(null);
+  };
+
+  const handleMonthChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    if (!val) return;
+    const [year, month] = val.split("-").map(Number);
+    setCurrentMonth(new Date(year, month - 1, 1));
     setInjectedSelectedDate(null);
   };
 
@@ -124,6 +134,12 @@ export const MonthlyView: React.FC<MonthlyViewProps> = ({
     transactions.forEach((tx) => {
       // Filter by Type
       if (filterType !== "all" && tx.type !== filterType) return;
+      // Filter by Search Name
+      if (
+        filterSearch &&
+        !tx.title.toLowerCase().includes(filterSearch.toLowerCase())
+      )
+        return;
       // Filter by Category
       if (
         selectedCategories.length > 0 &&
@@ -164,6 +180,7 @@ export const MonthlyView: React.FC<MonthlyViewProps> = ({
     filterType,
     filterMinAmount,
     filterMaxAmount,
+    filterSearch,
     convertToDefault,
   ]);
 
@@ -278,6 +295,8 @@ export const MonthlyView: React.FC<MonthlyViewProps> = ({
             selectedCategories.includes(tx.category)) &&
           (filterMinAmount === null || convertedAmount >= filterMinAmount) &&
           (filterMaxAmount === null || convertedAmount <= filterMaxAmount) &&
+          (!filterSearch ||
+            tx.title.toLowerCase().includes(filterSearch.toLowerCase())) &&
           (!filterStartDate || tx.date >= new Date(filterStartDate)) &&
           (!filterStartDate ||
             tx.date <=
@@ -295,6 +314,7 @@ export const MonthlyView: React.FC<MonthlyViewProps> = ({
     filterMaxAmount,
     filterStartDate,
     filterEndDate,
+    filterSearch,
     convertToDefault,
     isCrossMonthRange,
   ]);
@@ -318,41 +338,59 @@ export const MonthlyView: React.FC<MonthlyViewProps> = ({
   const monthViewLabel = isCrossMonthRange ? "Filtered Results" : "Full Month";
 
   return (
-    <div className="space-y-6 pb-20 overflow-x-hidden animate-in fade-in zoom-in-95 duration-300">
+    <div className="space-y-6 pb-20 overflow-x-hidden">
       <GlassCard className="max-w-md mx-auto relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-40 h-40 bg-accent/10 rounded-full blur-[40px] pointer-events-none -translate-y-1/2 translate-x-1/2" />
-        <div className="flex flex-col gap-4 mb-6 relative z-10">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4">
-            <div className="flex items-center justify-between w-full sm:w-auto mt-2 sm:mt-0 order-2 sm:order-1">
+        {/* Hidden Native Month Picker */}
+        <input
+          type="month"
+          ref={monthPickerRef}
+          className="sr-only"
+          onChange={handleMonthChange}
+          value={`${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, "0")}`}
+        />
+        <div className="mb-6 relative z-10 flex flex-col gap-3">
+          {/* Top Row: Utilities (Today & Specific Month Picker) */}
+          <div className="flex items-center justify-center gap-3">
+            <button
+              onClick={handleToday}
+              className="px-3 py-1.5 bg-accent/10 text-accent hover:bg-accent/20 border border-accent/20 rounded-full text-[10px] font-black uppercase tracking-[0.15em] transition-all hover:scale-105 active:scale-95 whitespace-nowrap"
+              aria-label="Go to Today"
+            >
+              Today
+            </button>
+            <button
+              onClick={() => monthPickerRef.current?.showPicker?.() || monthPickerRef.current?.click()}
+              className="flex items-center gap-2 px-3 py-1.5 bg-bg-card/20 hover:bg-bg-card/40 border border-bg-border rounded-full transition-all hover:scale-105 active:scale-95 text-muted hover:text-bright"
+              aria-label="Pick specific month"
+            >
+              <Calendar className="w-4 h-4" />
+              <span className="text-[10px] font-black uppercase tracking-[0.15em]">Jump to...</span>
+            </button>
+          </div>
+
+          {/* Bottom Row: Navigation (Prev, Month Year, Next) */}
+          <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+            <div className="flex justify-start">
               <button
                 onClick={handlePrevMonth}
                 aria-label="Previous month"
-                className="p-1.5 sm:p-2 bg-bg-card/30 hover:bg-bg-card/50 border border-bg-border rounded-full transition-colors text-muted hover:text-bright"
+                className="w-10 h-10 flex items-center justify-center bg-bg-card/30 hover:bg-bg-card/50 border border-bg-border rounded-full transition-colors text-muted hover:text-bright"
               >
-                <ChevronLeft className="w-5 h-5" aria-hidden="true" />
-              </button>
-              <h2 className="text-lg sm:text-xl font-bold text-bright tracking-wide capitalize sm:hidden">
-                {monthYearStr}
-              </h2>
-              <button
-                onClick={handleNextMonth}
-                aria-label="Next month"
-                className="p-1.5 sm:p-2 bg-bg-card/30 hover:bg-bg-card/50 border border-bg-border rounded-full transition-colors text-muted hover:text-bright"
-              >
-                <ChevronRight className="w-5 h-5" aria-hidden="true" />
+                <ChevronLeft className="w-6 h-6" aria-hidden="true" />
               </button>
             </div>
 
-            <div className="flex items-center gap-3 order-1 sm:order-2">
-              <h2 className="text-xl font-bold text-bright tracking-wide capitalize hidden sm:block">
-                {monthYearStr}
-              </h2>
+            <h2 className="text-xl sm:text-2xl font-black text-bright tracking-tight capitalize whitespace-nowrap">
+              {monthYearStr}
+            </h2>
+
+            <div className="flex justify-end">
               <button
-                onClick={handleToday}
-                className="px-3 py-1.5 bg-accent/20 text-accent hover:bg-accent/30 border border-accent/30 rounded-full text-xs font-semibold uppercase tracking-wider transition-colors whitespace-nowrap"
-                aria-label="Go to Today"
+                onClick={handleNextMonth}
+                aria-label="Next month"
+                className="w-10 h-10 flex items-center justify-center bg-bg-card/30 hover:bg-bg-card/50 border border-bg-border rounded-full transition-colors text-muted hover:text-bright"
               >
-                Go to Today
+                <ChevronRight className="w-6 h-6" aria-hidden="true" />
               </button>
             </div>
           </div>
@@ -382,7 +420,8 @@ export const MonthlyView: React.FC<MonthlyViewProps> = ({
             filterMinAmount !== null ||
             filterMaxAmount !== null ||
             filterStartDate !== "" ||
-            filterEndDate !== "") && (
+            filterEndDate !== "" ||
+            filterSearch !== "") && (
             <div className="flex-1 flex items-center gap-2 animate-in fade-in slide-in-from-left-2 duration-300 min-w-0">
               <span className="text-[10px] font-bold text-muted uppercase tracking-widest whitespace-nowrap opacity-60">
                 Active:
@@ -429,6 +468,12 @@ export const MonthlyView: React.FC<MonthlyViewProps> = ({
                       : filterStartDate
                         ? "Today"
                         : "End"}
+                  </span>
+                )}
+                {filterSearch && (
+                  <span className="flex items-center gap-1.5 px-2.5 py-1 bg-accent/10 text-accent border border-accent/20 rounded-full text-[10px] font-bold uppercase tracking-wider whitespace-nowrap">
+                    <Search className="w-3 h-3" />
+                    {filterSearch}
                   </span>
                 )}
                 {selectedCategories.map((cat) => (
@@ -487,6 +532,7 @@ export const MonthlyView: React.FC<MonthlyViewProps> = ({
         currentMaxAmount={filterMaxAmount}
         currentStartDate={filterStartDate}
         currentEndDate={filterEndDate}
+        currentSearch={filterSearch}
         onApply={({
           type,
           categories,
@@ -494,6 +540,7 @@ export const MonthlyView: React.FC<MonthlyViewProps> = ({
           maxAmount,
           startDate,
           endDate,
+          search,
         }) => {
           setFilterType(type);
           setSelectedCategories(categories);
@@ -501,6 +548,7 @@ export const MonthlyView: React.FC<MonthlyViewProps> = ({
           setFilterMaxAmount(maxAmount);
           setFilterStartDate(startDate);
           setFilterEndDate(endDate);
+          setFilterSearch(search);
         }}
         convertToDefault={convertToDefault}
         currencySymbol={defaultCurrency}
