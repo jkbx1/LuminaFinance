@@ -1,9 +1,11 @@
 import React, { useState, useRef } from "react";
+import { useIsMobileChrome } from "../hooks/useIsMobileChrome";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Tag, Calendar, Plus, Check, Edit2 } from "lucide-react";
 import { type Transaction, CUSTOM_ICONS_MAP } from "./ExpenseCard";
 import { getSavedCategoryIcon, saveCategoryIcon } from "../lib/utils";
 import { CSVImportView } from "./CSVImportView";
+import { EXPENSE_CATEGORIES, INCOME_CATEGORIES } from "../constants/categories";
 
 // ─── Currency Options ────────────────────────────────────────────────────────
 const CURRENCIES = [
@@ -15,24 +17,6 @@ const CURRENCIES = [
   { code: "CAD", symbol: "CA$" },
 ];
 
-// ─── Category Sets ────────────────────────────────────────────────────────────
-const EXPENSE_CATEGORIES = [
-  { id: "food", label: "Food & Drink" },
-  { id: "shopping", label: "Shopping" },
-  { id: "housing", label: "Housing" },
-  { id: "transport", label: "Transportation" },
-  { id: "utilities", label: "Utilities" },
-  { id: "other", label: "Other" },
-];
-
-const INCOME_CATEGORIES = [
-  { id: "salary", label: "Salary" },
-  { id: "freelance", label: "Freelance" },
-  { id: "investment", label: "Investment" },
-  { id: "gift", label: "Gift" },
-  { id: "family", label: "Family" },
-  { id: "other", label: "Other" },
-];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const getStoredCurrency = () =>
@@ -84,16 +68,7 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
   const [customCategoryDraft, setCustomCategoryDraft] = useState("");
   const customInputRef = useRef<HTMLInputElement>(null);
 
-  // Detect mobile Chrome synchronously — useMemo is correct on first render,
-  // avoiding the useEffect delay that caused glitchy animations on mobile Chrome
-  const isMobileChrome = React.useMemo(() => {
-    if (typeof window === "undefined") return false;
-    const ua = window.navigator.userAgent || "";
-    const isAndroid = /Android/i.test(ua);
-    const isChrome =
-      /Chrome/i.test(ua) && !/Edg/i.test(ua) && !/OPR/i.test(ua);
-    return isAndroid && isChrome;
-  }, []);
+  const isMobileChrome = useIsMobileChrome();
 
   // Populate form when opening
   React.useEffect(() => {
@@ -127,14 +102,17 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
   // Derived custom categories for the current type
   const customCategories = React.useMemo(() => {
     const set = new Set<string>();
-    const builtInIds = (type === "expense" ? EXPENSE_CATEGORIES : INCOME_CATEGORIES).map(c => c.id);
-    
-    transactions.forEach(tx => {
+    // Cast to readonly string[] so .includes() accepts tx.category (plain string).
+    // The as-const arrays have literal-typed ids, which makes includes() too narrow.
+    const builtInIds = (type === "expense" ? EXPENSE_CATEGORIES : INCOME_CATEGORIES)
+      .map((c) => c.id) as readonly string[];
+
+    transactions.forEach((tx) => {
       if (tx.type === type && !builtInIds.includes(tx.category)) {
         set.add(tx.category.toLowerCase());
       }
     });
-    
+
     return Array.from(set).sort();
   }, [transactions, type]);
 
@@ -164,7 +142,14 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title || !amount) return;
+
+    // JS-level validation — guards against DOM manipulation bypassing HTML5 required
+    const trimmedTitle = title.trim();
+    const parsedAmount = parseFloat(amount);
+
+    if (!trimmedTitle) return;
+    if (!isFinite(parsedAmount) || isNaN(parsedAmount) || parsedAmount <= 0) return;
+    if (trimmedTitle.length > 200) return; // prevent absurdly long titles
 
     let finalCategory = category;
     if (showCustomInput && customCategoryDraft.trim()) {
@@ -176,11 +161,11 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
       !INCOME_CATEGORIES.find((c) => c.id === finalCategory);
 
     const txData: Omit<Transaction, "id"> = {
-      title,
+      title: trimmedTitle,
       amount:
         type === "expense"
-          ? -Math.abs(Number(amount))
-          : Math.abs(Number(amount)),
+          ? -Math.abs(parsedAmount)
+          : Math.abs(parsedAmount),
       type,
       category: finalCategory,
       currency,
@@ -204,6 +189,7 @@ export const AddExpenseModal: React.FC<AddExpenseModalProps> = ({
     setAmount("");
     onClose();
   };
+
 
   const categories =
     type === "expense" ? EXPENSE_CATEGORIES : INCOME_CATEGORIES;

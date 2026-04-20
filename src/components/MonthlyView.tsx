@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from "react";
+import { useIsMobileChrome } from "../hooks/useIsMobileChrome";
 
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronLeft, ChevronRight, Filter, Search, Calendar } from "lucide-react";
@@ -47,16 +48,7 @@ export const MonthlyView: React.FC<MonthlyViewProps> = ({
   const [filterEndDate, setFilterEndDate] = useState<string>("");
   const [filterSearch, setFilterSearch] = useState<string>("");
 
-  // Detect mobile Chrome synchronously — useMemo is correct on first render,
-  // avoiding the useEffect delay that could cause glitchy View Transitions
-  const isMobileChrome = useMemo(() => {
-    if (typeof window === "undefined") return false;
-    const ua = window.navigator.userAgent || "";
-    const isAndroid = /Android/i.test(ua);
-    const isChrome =
-      /Chrome/i.test(ua) && !/Edg/i.test(ua) && !/OPR/i.test(ua);
-    return isAndroid && isChrome;
-  }, []);
+  const isMobileChrome = useIsMobileChrome();
 
 
   // We can just set viewMode directly when they click a specific day.

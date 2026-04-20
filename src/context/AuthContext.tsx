@@ -6,6 +6,7 @@ import {
   signInWithPopup,
   signOut,
 } from "firebase/auth";
+import { FirebaseError } from "firebase/app";
 import { auth, googleProvider } from "../lib/firebase";
 
 interface AuthContextType {
@@ -46,8 +47,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const signInWithGoogle = async () => {
     try {
       return await signInWithPopup(auth, googleProvider);
-    } catch (_error) {
-      console.error("Error signing in with Google: Authentication failed.");
+    } catch (error) {
+      if (error instanceof FirebaseError) {
+        console.error(`[Auth] sign-in failed [${error.code}]: ${error.message}`);
+      } else {
+        console.error("[Auth] sign-in failed with unexpected error:", error);
+      }
+      // Return undefined — caller (handleLoginAndSync) already handles this case
+      return undefined;
     }
   };
 
@@ -70,8 +77,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       } else {
         await signOut(auth);
       }
-    } catch (_error) {
-      console.error("Error signing out: Sign out process failed.");
+    } catch (error) {
+      if (error instanceof FirebaseError) {
+        console.error(`[Auth] logout failed [${error.code}]: ${error.message}`);
+      } else {
+        console.error("[Auth] logout failed with unexpected error:", error);
+      }
     }
   };
 

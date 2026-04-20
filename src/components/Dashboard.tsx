@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
+import { useIsMobileChrome } from "../hooks/useIsMobileChrome";
 import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
 
 import { Plus } from "lucide-react";
@@ -54,10 +55,97 @@ const slideVariants = {
   }),
 };
 
+// ── Module-level constants — zero per-render allocations ──────────────────────
+
+/** Chart category → color mapping (module-level to avoid re-allocation). */
+const COLOR_MAP: Record<string, string> = {
+  food: "#FF0037",
+  shopping: "#6366F1",
+  housing: "#F59E0B",
+  transport: "#3B82F6",
+  utilities: "#10B981",
+  salary: "#10B981",
+  freelance: "#3B82F6",
+  investment: "#8B5CF6",
+  gift: "#EC4899",
+  family: "#F59E0B",
+  other: "#94A3B8",
+};
+
+/** Guest transaction sanitizer — validates and normalises raw localStorage data
+ *  before it is written into React state or synced to Firestore. */
+const VALID_TX_TYPES = new Set(["income", "expense"]);
+const VALID_CURRENCIES_SET = new Set(["USD", "EUR", "GBP", "PLN", "JPY", "CAD"]);
+const MAX_TITLE_LEN = 200;
+const MAX_CATEGORY_LEN = 50;
+
+function sanitizeGuestTransaction(
+  item: unknown,
+): Omit<Transaction, "id"> | null {
+  if (typeof item !== "object" || item === null) return null;
+  const i = item as Record<string, unknown>;
+
+  const title =
+    typeof i.title === "string" ? i.title.slice(0, MAX_TITLE_LEN).trim() : null;
+  const amount =
+    typeof i.amount === "number" && isFinite(i.amount) ? i.amount : null;
+  const type = VALID_TX_TYPES.has(i.type as string)
+    ? (i.type as "income" | "expense")
+    : null;
+
+  // All three required fields must be valid — skip the record if not
+  if (!title || amount === null || !type) return null;
+
+  const currency =
+    typeof i.currency === "string" && VALID_CURRENCIES_SET.has(i.currency)
+      ? i.currency
+      : "USD";
+  const category =
+    typeof i.category === "string"
+      ? i.category.slice(0, MAX_CATEGORY_LEN).trim().toLowerCase() || "other"
+      : "other";
+  const rawDate = new Date(i.date as string | number);
+  const date = isNaN(rawDate.getTime()) ? new Date() : rawDate;
+
+  const result: Omit<Transaction, "id"> = {
+    title, amount, type, currency, category, date,
+  };
+  if (typeof i.customIcon === "string" && i.customIcon) result.customIcon = i.customIcon;
+  if (typeof i.batchId === "string" && i.batchId) result.batchId = i.batchId;
+  if (typeof i.batchName === "string" && i.batchName) result.batchName = i.batchName;
+  if (i.isBatchHeader === true) result.isBatchHeader = true;
+  if (typeof i.counterparty === "string" && i.counterparty)
+    result.counterparty = i.counterparty.slice(0, MAX_TITLE_LEN);
+
+  return result;
+}
+
 export const Dashboard: React.FC = () => {
   const { user, logout, isGuest, signInWithGoogle, clearGuest } = useAuth();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  // Keep a ref in sync with the latest transactions array so that
+  // handleDeleteTransaction can read it without being a dep of useCallback.
+  const transactionsRef = React.useRef<Transaction[]>(transactions);
+  transactionsRef.current = transactions;
   const [isSyncing, setIsSyncing] = useState(false);
+
+  // ── Write-error toast ──────────────────────────────────────────────────────
+  const [writeError, setWriteError] = useState<string | null>(null);
+  const writeErrorTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const showError = React.useCallback((msg: string) => {
+    // Cancel any existing timer so the display duration resets on repeated errors
+    if (writeErrorTimerRef.current) clearTimeout(writeErrorTimerRef.current);
+    setWriteError(msg);
+    writeErrorTimerRef.current = setTimeout(() => setWriteError(null), 4000);
+  }, []);
+
+  // Clean up timer on unmount
+  React.useEffect(() => {
+    return () => {
+      if (writeErrorTimerRef.current) clearTimeout(writeErrorTimerRef.current);
+    };
+  }, []);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] =
@@ -88,16 +176,7 @@ export const Dashboard: React.FC = () => {
     "daily" | "weekly" | "monthly" | "yearly" | "all"
   >("monthly");
 
-  // Detect mobile Chrome synchronously — useMemo is correct on first render,
-  // avoiding the useEffect delay that could cause glitchy View Transitions
-  const isMobileChrome = useMemo(() => {
-    if (typeof window === "undefined") return false;
-    const ua = window.navigator.userAgent || "";
-    const isAndroid = /Android/i.test(ua);
-    const isChrome =
-      /Chrome/i.test(ua) && !/Edg/i.test(ua) && !/OPR/i.test(ua);
-    return isAndroid && isChrome;
-  }, []);
+  const isMobileChrome = useIsMobileChrome();
 
 
   // ── Default display currency & live exchange rates ──────────────────────
@@ -123,15 +202,38 @@ export const Dashboard: React.FC = () => {
   useEffect(() => {
     fetch("https://api.frankfurter.dev/v2/rates?base=USD")
       .then((r) => r.json())
-      .then((data) => {
+      .then((data: unknown) => {
         const ratesMap: Record<string, number> = { USD: 1 };
         let updateDate = "Live";
+
         if (Array.isArray(data) && data.length > 0) {
-          updateDate = data[0].date;
-          data.forEach((item: any) => {
-            ratesMap[item.quote] = item.rate;
+          // Validate the date field before trusting it
+          const firstItem = data[0];
+          if (
+            typeof firstItem === "object" &&
+            firstItem !== null &&
+            typeof (firstItem as Record<string, unknown>).date === "string"
+          ) {
+            updateDate = (firstItem as Record<string, unknown>).date as string;
+          }
+
+          data.forEach((item: unknown) => {
+            // Strict type guards — skip any entry where quote or rate is malformed.
+            // A bad rate silently producing NaN would corrupt ALL conversions and
+            // the localStorage cache that persists across sessions.
+            if (
+              typeof item !== "object" || item === null
+            ) return;
+            const entry = item as Record<string, unknown>;
+            if (
+              typeof entry.quote !== "string" ||
+              typeof entry.rate !== "number" ||
+              !isFinite(entry.rate)
+            ) return;
+
+            ratesMap[entry.quote] = entry.rate;
           });
-          
+
           setExchangeRates(ratesMap);
           setLastUpdatedDate(updateDate);
           localStorage.setItem("lumina_exchange_rates_cache", JSON.stringify(ratesMap));
@@ -144,6 +246,7 @@ export const Dashboard: React.FC = () => {
         setRatesLoading(false);
       });
   }, []);
+
 
 
   /** Convert an amount from `from` currency into `defaultCurrency`. */
@@ -206,11 +309,17 @@ export const Dashboard: React.FC = () => {
       try {
         const localData = localStorage.getItem("lumina_local_data");
         if (localData) {
-          const parsed = JSON.parse(localData) as any[];
-          const txs: Transaction[] = parsed.map((item) => ({
-            ...item,
-            date: new Date(item.date),
-          }));
+          const rawParsed: unknown = JSON.parse(localData);
+          if (!Array.isArray(rawParsed)) throw new Error("Guest data is not an array");
+
+          const txs: Transaction[] = rawParsed
+            .map((item, idx) => {
+              const sanitized = sanitizeGuestTransaction(item);
+              if (!sanitized) return null;
+              return { ...sanitized, id: String(idx) } as Transaction;
+            })
+            .filter((tx): tx is Transaction => tx !== null);
+
           txs.sort((a, b) => b.date.getTime() - a.date.getTime());
           setTransactions(txs);
         }
@@ -219,6 +328,7 @@ export const Dashboard: React.FC = () => {
       }
     }
   }, [user, isGuest]);
+
 
   const cleanTransactionForFirestore = (txData: Omit<Transaction, "id">) => {
     const docData: any = {
@@ -252,6 +362,7 @@ export const Dashboard: React.FC = () => {
         );
       } catch (error) {
         console.error("Error adding transaction:", error);
+        showError("Couldn't save transaction. Check your connection and try again.");
       }
     } else if (isGuest) {
       const newTx: Transaction = {
@@ -285,6 +396,7 @@ export const Dashboard: React.FC = () => {
         }
       } catch (error) {
         console.error("Error batch adding transactions:", error);
+        showError("Couldn't import transactions. Check your connection and try again.");
       }
     } else if (isGuest) {
       const newTxs: Transaction[] = txsData.map((txData) => ({
@@ -312,6 +424,7 @@ export const Dashboard: React.FC = () => {
         );
       } catch (error) {
         console.error("Error updating transaction:", error);
+        showError("Couldn't update transaction. Check your connection and try again.");
       }
     } else if (isGuest) {
       setTransactions((prev) => {
@@ -330,12 +443,13 @@ export const Dashboard: React.FC = () => {
       if (user) {
         try {
           if (batchId) {
-            // Delete all with this batchId
+            // Use the ref so this callback never goes stale without re-creating
             const batch = writeBatch(db);
-            const batchTxs = transactions.filter(tx => tx.batchId === batchId);
-            batchTxs.forEach(tx => {
-              batch.delete(doc(db, `users/${user.uid}/transactions`, tx.id));
-            });
+            transactionsRef.current
+              .filter((tx) => tx.batchId === batchId)
+              .forEach((tx) => {
+                batch.delete(doc(db, `users/${user.uid}/transactions`, tx.id));
+              });
             await batch.commit();
           } else {
             await deleteDoc(doc(db, `users/${user.uid}/transactions`, id));
@@ -344,10 +458,12 @@ export const Dashboard: React.FC = () => {
           console.error(
             "Error deleting transaction: Failed to delete from database.",
           );
+          showError("Couldn't delete transaction. Check your connection and try again.");
         }
       } else if (isGuest) {
+        // Functional updater avoids needing transactions in deps
         setTransactions((prev) => {
-          const updated = batchId 
+          const updated = batchId
             ? prev.filter((tx) => tx.batchId !== batchId)
             : prev.filter((tx) => tx.id !== id);
           saveGuestData(updated);
@@ -355,7 +471,7 @@ export const Dashboard: React.FC = () => {
         });
       }
     },
-    [user, isGuest, transactions],
+    [user, isGuest, showError], // `transactions` intentionally removed — accessed via ref
   );
 
   const handleLoginAndSync = async () => {
@@ -374,28 +490,32 @@ export const Dashboard: React.FC = () => {
       const localData = localStorage.getItem("lumina_local_data");
 
       if (localData) {
-        const parsedTxs = JSON.parse(localData) as any[];
-
-        // Batch write to Firestore for optimal performance
-        const batch = writeBatch(db);
-
-        for (const item of parsedTxs) {
-          // You must generate fresh DocumentReferences using the new UID namespace
-          const newDocRef = doc(
-            collection(db, `users/${currentUid}/transactions`),
-          );
-          batch.set(newDocRef, {
-            title: item.title,
-            amount: item.amount,
-            type: item.type,
-            category: item.category,
-            ...(item.customIcon ? { customIcon: item.customIcon } : {}),
-            currency: item.currency ?? "USD",
-            date: new Date(item.date),
-          });
+        let parsedTxs: unknown[];
+        try {
+          const raw: unknown = JSON.parse(localData);
+          if (!Array.isArray(raw)) throw new Error("Unexpected format");
+          parsedTxs = raw;
+        } catch {
+          console.error("Sync aborted: guest data could not be parsed.");
+          setIsSyncing(false);
+          return;
         }
 
-        await batch.commit();
+        // Firestore batch limit is 500 operations
+        const BATCH_LIMIT = 500;
+        for (let i = 0; i < parsedTxs.length; i += BATCH_LIMIT) {
+          const chunk = parsedTxs.slice(i, i + BATCH_LIMIT);
+          const batch = writeBatch(db);
+
+          for (const item of chunk) {
+            const sanitized = sanitizeGuestTransaction(item);
+            if (!sanitized) continue; // skip malformed records silently
+            const newDocRef = doc(collection(db, `users/${currentUid}/transactions`));
+            batch.set(newDocRef, cleanTransactionForFirestore(sanitized));
+          }
+
+          await batch.commit();
+        }
       }
 
       // Erase Guest Cache LocalStorage footprint
@@ -487,138 +607,96 @@ export const Dashboard: React.FC = () => {
     });
   };
 
-  const filteredBalanceTransactions = transactions.filter((tx) => {
-    if (balanceTimeframe === "all") return true;
-
-    const txDate = tx.date;
+  const filteredBalanceTransactions = useMemo(() => {
+    if (balanceTimeframe === "all") return transactions;
     const nowLocal = new Date();
     const startOfTodayLocal = new Date(
       nowLocal.getFullYear(),
       nowLocal.getMonth(),
       nowLocal.getDate(),
     );
-
-    if (balanceTimeframe === "daily") {
-      return txDate >= startOfTodayLocal;
-    }
-
-    if (balanceTimeframe === "weekly") {
-      const sevenDaysAgo = new Date(startOfTodayLocal);
-      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-      return txDate >= sevenDaysAgo;
-    }
-
-    if (balanceTimeframe === "monthly") {
-      return (
-        txDate.getMonth() === nowLocal.getMonth() &&
-        txDate.getFullYear() === nowLocal.getFullYear()
-      );
-    }
-
-    if (balanceTimeframe === "yearly") {
-      return txDate.getFullYear() === nowLocal.getFullYear();
-    }
-
-    return true;
-  });
+    return transactions.filter((tx) => {
+      const txDate = tx.date;
+      if (balanceTimeframe === "daily") return txDate >= startOfTodayLocal;
+      if (balanceTimeframe === "weekly") {
+        const sevenDaysAgo = new Date(startOfTodayLocal);
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+        return txDate >= sevenDaysAgo;
+      }
+      if (balanceTimeframe === "monthly") {
+        return (
+          txDate.getMonth() === nowLocal.getMonth() &&
+          txDate.getFullYear() === nowLocal.getFullYear()
+        );
+      }
+      if (balanceTimeframe === "yearly") {
+        return txDate.getFullYear() === nowLocal.getFullYear();
+      }
+      return true;
+    });
+  }, [transactions, balanceTimeframe]);
 
   // Calculations (converted to defaultCurrency)
-  const balance = filteredBalanceTransactions.reduce(
-    (acc, tx) => acc + convertToDefault(tx.amount, tx.currency),
-    0,
-  );
-  const income = filteredBalanceTransactions
-    .filter((tx) => tx.type === "income")
-    .reduce((acc, tx) => acc + convertToDefault(tx.amount, tx.currency), 0);
-  const expense = filteredBalanceTransactions
-    .filter((tx) => tx.type === "expense")
-    .reduce(
-      (acc, tx) => acc + Math.abs(convertToDefault(tx.amount, tx.currency)),
-      0,
-    );
-
-  // Chart Data format
-  const now = new Date();
-  const startOfToday = new Date(
-    now.getFullYear(),
-    now.getMonth(),
-    now.getDate(),
-  );
-
-  const filteredChartTransactions = transactions.filter((tx) => {
-    if (tx.type !== chartType) return false;
-    if (chartTimeframe === "all") return true;
-
-    const txDate = tx.date;
-
-    if (chartTimeframe === "daily") {
-      return txDate >= startOfToday;
+  const { balance, income, expense } = useMemo(() => {
+    let income = 0;
+    let expense = 0;
+    for (const tx of filteredBalanceTransactions) {
+      const converted = convertToDefault(tx.amount, tx.currency);
+      if (tx.type === "income") income += converted;
+      else expense += Math.abs(converted);
     }
+    return { balance: income - expense, income, expense };
+  }, [filteredBalanceTransactions, convertToDefault]);
 
-    if (chartTimeframe === "weekly") {
-      const sevenDaysAgo = new Date(startOfToday);
-      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-      return txDate >= sevenDaysAgo;
-    }
+  // Chart data — filtered, aggregated, and shaped in one memoized pass
+  // (COLOR_MAP is defined at module scope to avoid per-render re-allocation)
 
-    if (chartTimeframe === "monthly") {
-      return (
-        txDate.getMonth() === now.getMonth() &&
-        txDate.getFullYear() === now.getFullYear()
-      );
-    }
+  const { chartData, isEmptyChart } = useMemo(() => {
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-    if (chartTimeframe === "yearly") {
-      return txDate.getFullYear() === now.getFullYear();
-    }
-
-    return true;
-  });
-
-  const chartDataMap = filteredChartTransactions.reduce(
-    (acc, tx) => {
-      acc[tx.category] =
-        (acc[tx.category] || 0) +
+    const dataMap: Record<string, number> = {};
+    for (const tx of transactions) {
+      if (tx.type !== chartType) continue;
+      if (chartTimeframe !== "all") {
+        const txDate = tx.date;
+        if (chartTimeframe === "daily" && txDate < startOfToday) continue;
+        if (chartTimeframe === "weekly") {
+          const sevenDaysAgo = new Date(startOfToday);
+          sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+          if (txDate < sevenDaysAgo) continue;
+        }
+        if (
+          chartTimeframe === "monthly" &&
+          (txDate.getMonth() !== now.getMonth() ||
+            txDate.getFullYear() !== now.getFullYear())
+        )
+          continue;
+        if (chartTimeframe === "yearly" && txDate.getFullYear() !== now.getFullYear())
+          continue;
+      }
+      dataMap[tx.category] =
+        (dataMap[tx.category] || 0) +
         convertToDefault(Math.abs(tx.amount), tx.currency);
-      return acc;
-    },
-    {} as Record<string, number>,
-  );
+    }
 
-  const colorMap: Record<string, string> = {
-    // Expense Categories
-    food: "#FF0037", 
-    shopping: "#6366F1",
-    housing: "#F59E0B",
-    transport: "#3B82F6",
-    utilities: "#10B981",
-    
-    // Income Categories
-    salary: "#10B981",
-    freelance: "#3B82F6",
-    investment: "#8B5CF6",
-    gift: "#EC4899",
-    family: "#F59E0B",
-    
-    // Shared
-    other: "#94A3B8",
-  };
+    const data = Object.entries(dataMap).map(([name, value]) => ({
+      name: name.charAt(0).toUpperCase() + name.slice(1),
+      value,
+      color: COLOR_MAP[name] ?? COLOR_MAP["other"],
+    }));
 
-  const chartData = Object.entries(chartDataMap).map(([name, value]) => ({
-    name: name.charAt(0).toUpperCase() + name.slice(1),
-    value,
-    color: colorMap[name] || colorMap["other"],
-  }));
+    const isEmpty = data.length === 0;
+    if (isEmpty) {
+      data.push({
+        name: chartType === "expense" ? "No Expenses" : "No Income",
+        value: 0.1,
+        color: "#1A1A1A",
+      });
+    }
+    return { chartData: data, isEmptyChart: isEmpty };
+  }, [transactions, chartType, chartTimeframe, convertToDefault]);
 
-  // Fallback empty chart data
-  const isEmptyChart = chartData.length === 0;
-  if (isEmptyChart) {
-    chartData.push({ 
-      name: chartType === "expense" ? "No Expenses" : "No Income", 
-      value: 0.1, 
-      color: "#1A1A1A" 
-    });
-  }
 
   return (
     <LayoutGroup>
@@ -1113,6 +1191,25 @@ export const Dashboard: React.FC = () => {
           defaultCurrency={defaultCurrency}
           transactions={transactions}
         />
+
+        {/* Write-error toast */}
+        <AnimatePresence>
+          {writeError && (
+            <motion.div
+              key="write-error-toast"
+              initial={{ opacity: 0, y: 24, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 24, scale: 0.95 }}
+              transition={{ duration: 0.2, ease: "easeOut" }}
+              className="fixed bottom-28 left-1/2 -translate-x-1/2 z-[200] flex items-center gap-3 px-5 py-3 bg-rose-500/90 text-white text-sm font-bold rounded-full shadow-2xl backdrop-blur-md border border-rose-400/30 whitespace-nowrap pointer-events-none"
+              role="alert"
+              aria-live="assertive"
+            >
+              <span aria-hidden="true">⚠️</span>
+              {writeError}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </main>
     </LayoutGroup>
   );

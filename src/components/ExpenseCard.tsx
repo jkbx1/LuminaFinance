@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useIsMobileChrome } from "../hooks/useIsMobileChrome";
 import { motion } from "framer-motion";
 import {
   ArrowDownRight,
@@ -173,28 +174,34 @@ const ScrollingText: React.FC<ScrollingTextProps> = ({
 
   const fontSizeClass = getFontSize();
 
-  // Measure overflow after font size is applied
+  // Measure overflow whenever text content, font class, or expand state changes.
+  // ResizeObserver is element-scoped — no global listeners, no layout thrashing
+  // from 50+ cards all responding to a single window resize event.
   React.useEffect(() => {
+    const container = containerRef.current;
+    const textEl = textRef.current;
+    if (!container || !textEl) return;
+
     const measure = () => {
-      if (containerRef.current && textRef.current) {
-        const containerWidth = containerRef.current.offsetWidth;
-        const textWidth = textRef.current.offsetWidth;
-        if (textWidth > containerWidth) {
-          setShouldScroll(true);
-          setScrollAmount(textWidth - containerWidth + 24); // 24px extra buffer
-        } else {
-          setShouldScroll(false);
-          setScrollAmount(0);
-        }
+      const containerWidth = container.offsetWidth;
+      const textWidth = textEl.offsetWidth;
+      if (textWidth > containerWidth) {
+        setShouldScroll(true);
+        setScrollAmount(textWidth - containerWidth + 24); // 24px extra buffer
+      } else {
+        setShouldScroll(false);
+        setScrollAmount(0);
       }
     };
-    
-    // Slight timeout to ensure layout is stable
+
+    // Initial measurement after layout settles
     const timer = setTimeout(measure, 50);
-    window.addEventListener('resize', measure);
+    const observer = new ResizeObserver(measure);
+    observer.observe(container);
+
     return () => {
-      window.removeEventListener('resize', measure);
       clearTimeout(timer);
+      observer.disconnect();
     };
   }, [text, fontSizeClass, isExpanded]);
 
@@ -245,15 +252,7 @@ const ExpenseCardComponent: React.FC<ExpenseCardProps> = ({
   // Check if device supports hover (desktop) vs touch (mobile)
   const [isHoverable, setIsHoverable] = useState(true);
 
-  // Detect mobile Chrome synchronously
-  const isMobileChrome = React.useMemo(() => {
-    if (typeof window === "undefined") return false;
-    const ua = window.navigator.userAgent || "";
-    const isAndroid = /Android/i.test(ua);
-    const isChrome =
-      /Chrome/i.test(ua) && !/Edg/i.test(ua) && !/OPR/i.test(ua);
-    return isAndroid && isChrome;
-  }, []);
+  const isMobileChrome = useIsMobileChrome();
 
   React.useEffect(() => {
     setIsHoverable(

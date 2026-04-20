@@ -148,10 +148,39 @@ export const CSVImportView: React.FC<CSVImportViewProps> = ({
               }
           }
 
-          const cleanAmount = amountVal.replace(/[^\d,.+-]/g, '').replace(',', '.');
-          const amount = parseFloat(cleanAmount);
+          // Safely parse European (1.234,56) and US (1,234.56) number formats.
+          // Step 1: remove any character that isn't a digit, comma, dot, or sign.
+          const stripped = amountVal.replace(/[^\d,.\-+]/g, "");
+          // Step 2: if the string contains both a dot and a comma, the one that
+          //         appears last is the decimal separator; remove the other as a
+          //         thousands separator. If only one is present and it appears
+          //         more than once it must be a thousands separator.
+          let normalised: string;
+          const lastDot = stripped.lastIndexOf(".");
+          const lastComma = stripped.lastIndexOf(",");
+          if (lastDot !== -1 && lastComma !== -1) {
+            // Both present — whichever comes last is the decimal separator
+            if (lastComma > lastDot) {
+              normalised = stripped.replace(/\./g, "").replace(",", ".");
+            } else {
+              normalised = stripped.replace(/,/g, "");
+            }
+          } else if (lastComma !== -1) {
+            // Comma only: if it appears more than once it's a thousands sep
+            normalised =
+              stripped.split(",").length > 2
+                ? stripped.replace(/,/g, "")
+                : stripped.replace(",", ".");
+          } else {
+            normalised = stripped;
+          }
+
+          const amount = parseFloat(normalised);
+          // Explicitly reject NaN or Infinity so they never reach Firestore
+          if (!isFinite(amount) || isNaN(amount)) return null;
+
           const type: "income" | "expense" = amount >= 0 ? "income" : "expense";
-          
+
           const category = String(catVal || "Imported").trim();
           const normalizedCategory = category.charAt(0).toUpperCase() + category.slice(1).toLowerCase();
 
@@ -170,7 +199,8 @@ export const CSVImportView: React.FC<CSVImportViewProps> = ({
             counterparty: descVal
           } as Omit<Transaction, "id">;
       })
-      .filter(tx => tx.amount !== 0 || tx.title !== "Imported Transaction");
+      // Filter out null (invalid amount) records as well as zero-amount placeholder rows
+      .filter((tx): tx is Omit<Transaction, "id"> => tx !== null && tx.amount !== 0);
   }, [csvData, headerIndex, mapping, step]);
 
   const handleImport = () => {

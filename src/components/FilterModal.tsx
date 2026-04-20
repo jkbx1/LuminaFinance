@@ -1,25 +1,11 @@
 import React, { useState, useMemo, useEffect } from "react";
+import { useIsMobileChrome } from "../hooks/useIsMobileChrome";
 import { motion, AnimatePresence } from "framer-motion";
 import { createPortal } from "react-dom";
 import { X, Filter, Check, Search } from "lucide-react";
 import { type Transaction } from "./ExpenseCard";
+import { EXPENSE_CATEGORIES, INCOME_CATEGORIES } from "../constants/categories";
 
-// Matches AddExpenseModal categories
-const EXPENSE_CATEGORIES = [
-  { id: "food", label: "Food & Drink" },
-  { id: "shopping", label: "Shopping" },
-  { id: "housing", label: "Housing" },
-  { id: "utilities", label: "Utilities" },
-  { id: "other", label: "Other" },
-];
-
-const INCOME_CATEGORIES = [
-  { id: "salary", label: "Salary" },
-  { id: "freelance", label: "Freelance" },
-  { id: "investment", label: "Investment" },
-  { id: "gift", label: "Gift" },
-  { id: "other", label: "Other" },
-];
 
 interface FilterModalProps {
   isOpen: boolean;
@@ -73,17 +59,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({
   const [endDate, setEndDate] = useState<string>(currentEndDate);
   const [search, setSearch] = useState<string>(currentSearch);
 
-  // Detect mobile Chrome synchronously — useMemo is correct on first render,
-  // avoiding the useEffect delay that caused glitchy animations on mobile Chrome
-  const isMobileChrome = useMemo(() => {
-    if (typeof window === "undefined") return false;
-    const ua = window.navigator.userAgent || "";
-    const isAndroid = /Android/i.test(ua);
-    const isChrome =
-      /Chrome/i.test(ua) && !/Edg/i.test(ua) && !/OPR/i.test(ua);
-    return isAndroid && isChrome;
-  }, []);
-
+  const isMobileChrome = useIsMobileChrome();
 
 
   // Sync state when modal opens
